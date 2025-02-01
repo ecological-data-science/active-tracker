@@ -53,11 +53,6 @@ PANEL_WIDTH = 65
 PANEL_LENGTH = 65
 PANEL_HEIGHT = 3
 
-slb = blt + 4.5  # 6 # sodaq length bottom = battery length top
-swb = bwt + 8  # sodaq width bottom
-slt2 = PANEL_LENGTH + 6
-
-swt2 = PANEL_WIDTH + 6  # 24 +GROW
 
 SCREW_LOCATION_W = 83  # PANEL_WIDTH + 13 # 24 +GROW
 SCREW_LOCATION_L = 63  # PANEL_LENGTH + 8
