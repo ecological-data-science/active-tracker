@@ -674,7 +674,7 @@ def solar_panel_wire(doc, mainlid):
 
 
 def add_screw_holes(doc, mainlid):
-    offset = 41
+    offset = 41.5
     yshift = offset * sin(radians(-SCREW_ANGLE))
     zshift = offset * cos(radians(-SCREW_ANGLE))
 
@@ -890,6 +890,167 @@ def add_screw_holes(doc, mainlid):
     return mainlid
 
 
+def add_gripper(doc, mainlid):
+    GRIPPER_WIDTH = 2
+    GRIPPER_HEIGHT = 18
+    gripperbox1 = doc.addObject("Part::Box", "gripperbox1")
+    gripperbox1.Length = 10
+    gripperbox1.Width = GRIPPER_WIDTH
+    gripperbox1.Height = GRIPPER_HEIGHT
+
+    gripperbox1.Placement = App.Placement(
+        App.Vector(
+            -CHIP_LENGTH / 2 + 7,
+            CHIP_WIDTH / 2 - GRIPPER_WIDTH - 1,
+            MAX_BASE_Y - CAVITY_HEIGHT + PCB_HEIGHT,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 0),
+    )
+
+    GRIPPER_WIDTH = 6
+    GRIPPER_HEIGHT = 8
+    gripperbox1a = doc.addObject("Part::Box", "gripperbox1a")
+    gripperbox1a.Length = 10
+    gripperbox1a.Width = GRIPPER_WIDTH
+    gripperbox1a.Height = GRIPPER_HEIGHT
+
+    gripperbox1a.Placement = App.Placement(
+        App.Vector(
+            -CHIP_LENGTH / 2 + 7,
+            CHIP_WIDTH / 2 - 3,
+            MAX_BASE_Y,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 0),
+    )
+
+    GRIPPER_WIDTH = 4
+    GRIPPER_HEIGHT = 5
+    gripperbox1b = doc.addObject("Part::Box", "gripperbox1b")
+    gripperbox1b.Length = 10
+    gripperbox1b.Width = GRIPPER_WIDTH
+    gripperbox1b.Height = GRIPPER_HEIGHT
+
+    gripperbox1b.Placement = App.Placement(
+        App.Vector(
+            -CHIP_LENGTH / 2 + 7,
+            CHIP_WIDTH / 2 - 3,
+            MAX_BASE_Y + 8,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 0),
+    )
+
+    fusion = doc.addObject("Part::MultiFuse", "Fusion")
+    doc.Fusion.Shapes = [gripperbox1, gripperbox1a, gripperbox1b]
+    doc.recompute()
+
+    gripper1 = doc.addObject("Part::Feature", "gripper1")
+    gripper1.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
+
+    doc.removeObject("Fusion")
+    doc.removeObject(gripperbox1.Name)
+    doc.removeObject(gripperbox1a.Name)
+    doc.removeObject(gripperbox1b.Name)
+
+    GRIPPER_WIDTH = 2
+    GRIPPER_HEIGHT = 18
+    gripperbox2 = doc.addObject("Part::Box", "gripperbox2")
+    gripperbox2.Length = 3
+    gripperbox2.Width = GRIPPER_WIDTH
+    gripperbox2.Height = GRIPPER_HEIGHT
+
+    gripperbox2.Placement = App.Placement(
+        App.Vector(
+            0,
+            -CHIP_WIDTH / 2 + GRIPPER_WIDTH,
+            MAX_BASE_Y - CAVITY_HEIGHT + PCB_HEIGHT,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 0),
+    )
+
+    GRIPPER_WIDTH = 7
+    GRIPPER_HEIGHT = 8.0
+    gripperbox2a = doc.addObject("Part::Box", "gripperbox2a")
+    gripperbox2a.Length = 3
+    gripperbox2a.Width = GRIPPER_WIDTH
+    gripperbox2a.Height = GRIPPER_HEIGHT
+
+    gripperbox2a.Placement = App.Placement(
+        App.Vector(
+            0,
+            -CHIP_WIDTH / 2 - 3,
+            MAX_BASE_Y,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 0),
+    )
+
+    GRIPPER_WIDTH = 3
+    GRIPPER_HEIGHT = 5.0
+    gripperbox2b = doc.addObject("Part::Box", "gripperbox2b")
+    gripperbox2b.Length = 3
+    gripperbox2b.Width = GRIPPER_WIDTH
+    gripperbox2b.Height = GRIPPER_HEIGHT
+
+    gripperbox2b.Placement = App.Placement(
+        App.Vector(
+            0,
+            -CHIP_WIDTH / 2 - 1,
+            MAX_BASE_Y + 8,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 0),
+    )
+
+    fusion = doc.addObject("Part::MultiFuse", "Fusion")
+    doc.Fusion.Shapes = [gripperbox2, gripperbox2a, gripperbox2b]
+    doc.recompute()
+
+    gripper2 = doc.addObject("Part::Feature", "gripper2")
+    gripper2.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
+
+    doc.removeObject("Fusion")
+    doc.removeObject(gripperbox2.Name)
+    doc.removeObject(gripperbox2a.Name)
+    doc.removeObject(gripperbox2b.Name)
+
+    doc.recompute()
+
+    fusion = doc.addObject("Part::MultiFuse", "Fusion")
+    doc.Fusion.Shapes = [mainlid, gripper1, gripper2]
+    doc.recompute()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
+
+    doc.removeObject("Fusion")
+    doc.removeObject(mainlid.Name)
+    doc.removeObject("gripper1")
+    doc.removeObject("gripper2")
+
+    return mainlid2
+
+    return
+    raise Exception("Not implemented")
+    ymin = MAX_BASE_Y - INNER_EDGE_HEIGHT
+
+    arduinobox1 = doc.addObject("Part::Wedge", "arduinobox1")
+    arduinobox1.Zmin = -LID_BOTTOM_WIDTH / 2
+    arduinobox1.Xmin = -LID_BOTTOM_LENGTH / 2
+    arduinobox1.Z2min = -LID_TOP_WIDTH / 2
+    arduinobox1.X2min = -LID_TOP_LENGTH / 2
+    arduinobox1.Zmax = LID_BOTTOM_WIDTH / 2
+    arduinobox1.Xmax = LID_BOTTOM_LENGTH / 2
+    arduinobox1.Z2max = LID_TOP_WIDTH / 2
+    arduinobox1.X2max = LID_TOP_LENGTH / 2
+
+    arduinobox1.Ymin = ymin
+    arduinobox1.Ymax = MAX_LID_Y
+
+    arduinobox1.Placement = App.Placement(
+        App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
+    )
+
+    raise Exception("Not implemented")
+
+
 def build_top_case(doc):
     toplid = build_lid_top(doc)
     baselid = build_lid_base(doc)
@@ -914,3 +1075,4 @@ def build_top_case(doc):
     mainlid = seal_protrusion(doc, mainlid)
     mainlid = solar_panel_wire(doc, mainlid)
     mainlid = add_screw_holes(doc, mainlid)
+    mainlid = add_gripper(doc, mainlid)

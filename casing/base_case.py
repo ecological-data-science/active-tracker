@@ -441,18 +441,65 @@ def add_groove(doc, baseholder):
 
 
 def add_pcb_cutout(doc, baseholder):
+
+    # width is 88 mm
+    # length is 48 mm
+    # corners are 4.8 mm
+    CHIP_TOLERANCE = 0.1
     CutterBox = doc.addObject("Part::Box", "CutterBox")
-    CutterBox.Length = CHIP_LENGTH
-    CutterBox.Width = CHIP_WIDTH
+    CutterBox.Length = CHIP_LENGTH + CHIP_TOLERANCE
+    CutterBox.Width = CHIP_WIDTH + CHIP_TOLERANCE
     CutterBox.Height = CAVITY_HEIGHT
     CutterBox.Placement = App.Placement(
         App.Vector(
-            -CHIP_LENGTH / 2, -CHIP_WIDTH / 2, FLOOR_THICKNESS - PLATE_THICKNESS
+            -(CHIP_LENGTH + CHIP_TOLERANCE) / 2, -(CHIP_WIDTH + CHIP_TOLERANCE) / 2, FLOOR_THICKNESS - PLATE_THICKNESS
         ),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    # TODO add the fillets for the corners and the inverted corner
+    # fillet the corners
+    fillet = doc.addObject("Part::Fillet", "Fillet")
+
+    fillet.Base = CutterBox
+    __fillets__ = []
+    __fillets__.append((5, 4.80, 4.80))
+    __fillets__.append((7, 4.80, 4.80))
+    __fillets__.append((1, 4.80, 4.80))
+    fillet.Edges = __fillets__
+    del __fillets__
+
+    doc.recompute()
+    CutterBox2 = App.ActiveDocument.addObject("Part::Feature", "CutterBox2")
+    CutterBox2.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))
+
+    doc.removeObject(fillet.Name)
+    doc.removeObject(CutterBox.Name)
+    doc.recompute()
+
+    CutCorner = doc.addObject("Part::Cylinder", "CutCorner")
+    CutCorner.Height = 100
+    CutCorner.Radius = 4.0
+
+    CutCorner.Placement = App.Placement(
+        App.Vector(
+            -(CHIP_LENGTH + CHIP_TOLERANCE)/ 2 - 0.0  ,
+            (CHIP_WIDTH+CHIP_TOLERANCE) / 2 - 0.0 ,
+            -50,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 0),
+    )
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = CutterBox2
+    cut.Tool = CutCorner
+    doc.recompute()
+
+    CutterBox = doc.addObject("Part::Feature", "CutterBox")
+    CutterBox.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Name)
+    doc.removeObject(CutterBox2.Name)
+    doc.removeObject(CutCorner.Name)
     doc.recompute()
     cut = doc.addObject("Part::Cut", "cut")
     cut.Base = baseholder
