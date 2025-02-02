@@ -6,56 +6,12 @@ import Part, PartGui
 import Mesh
 import sys
 
+from math import sin, cos, radians
+from dimensions import *
 
-# this is the maximum height needed inside the case
-MAX_HEIGHT = 18
+import importlib
 
-# this is the thickness of the curved base
-PLATE_THICKNESS = 10
-
-# this is the thickness of the base once the inset has been cut out
-FLOOR_THICKNESS = 3
-
-
-# the top of the base is a location 0,0,0
-# the lowest edge of the base is at -10 in the centre
-
-# the total height is 3 + 18 + 3 + 3 = 27 which is floor thickness + the cavity height + the thickness of the lid + the thickness of the panel
-
-COLLAR_MAJOR_RADIUS = 350
-COLLAR_MINOR_RADIUS = 140
-COLLAR_WIDTH = 50
-
-PLATE_LENGTH = 128 + 20 + 20
-
-
-LIPO_WIDTH = 60 + 2
-LIPO_LENGTH = 40
-CAVITY_HEIGHT = 10
-
-
-CHIP_WIDTH = 88
-CHIP_LENGTH = 48
-CHIP_HEIGHT = 13
-
-
-SEAL_LENGTH = CHIP_LENGTH + 3 + 4
-SEAL_WIDTH = CHIP_WIDTH + 5
-
-
-bwb = SEAL_WIDTH + 4 + 4  # battery length bottom
-blb = 50  # battery width bottom
-bwt = SEAL_WIDTH + 4 + 4  # battery length top
-blt = SEAL_LENGTH + 4 + 4  # battery width top
-
-
-PANEL_WIDTH = 65
-PANEL_LENGTH = 65
-PANEL_HEIGHT = 3
-
-
-SCREW_LOCATION_W = 83  # PANEL_WIDTH + 13 # 24 +GROW
-SCREW_LOCATION_L = 63  # PANEL_LENGTH + 8
+importlib.reload(sys.modules["dimensions"])
 
 
 def create_cylinder(doc, offset):
@@ -144,61 +100,65 @@ def create_curved_base(doc):
 
 def pcb_platform(doc, curved_base):
     lipobox1 = doc.addObject("Part::Box", "lipobox1")
-    LIPO_BOX_HEIGHT = 3
-    lipobox1.Length = blt
-    lipobox1.Width = bwt
-    lipobox1.Height = LIPO_BOX_HEIGHT  # CAVITY_HEIGHT + 3
+    lipobox1.Length = BASE_TOP_LENGTH
+    lipobox1.Width = BASE_TOP_WIDTH
+    lipobox1.Height = INNER_EDGE_HEIGHT
 
     lipobox1.Placement = App.Placement(
-        App.Vector(-(blt) / 2, -(bwt) / 2, -LIPO_BOX_HEIGHT + 3),
+        App.Vector(
+            -(BASE_TOP_LENGTH) / 2,
+            -(BASE_TOP_WIDTH) / 2,
+            MAX_BASE_Y - INNER_EDGE_HEIGHT,
+        ),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
     lipobox2 = doc.addObject("Part::Box", "lipobox2")
-    LIPO_BOX_HEIGHT2 = 2
-    lipobox2.Length = blt + 2
-    lipobox2.Width = bwt
-    lipobox2.Height = LIPO_BOX_HEIGHT2  # CAVITY_HEIGHT + 3
+    lipobox2.Length = BASE_TOP_LENGTH + 2
+    lipobox2.Width = BASE_TOP_WIDTH
+    lipobox2.Height = OUTER_EDGE_HEIGHT
 
     lipobox2.Placement = App.Placement(
-        App.Vector(-(blt + 2) / 2, -(bwt) / 2, -LIPO_BOX_HEIGHT - LIPO_BOX_HEIGHT2 + 3),
+        App.Vector(
+            -(BASE_TOP_LENGTH + 2) / 2,
+            -(BASE_TOP_WIDTH) / 2,
+            MAX_BASE_Y - INNER_EDGE_HEIGHT - OUTER_EDGE_HEIGHT,
+        ),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    BASE_FLOOR_HEIGHT = CAVITY_HEIGHT + 3 - PLATE_THICKNESS
-
-    lipoboxwedge = doc.addObject("Part::Wedge", "lipoboxwedge")
-    lipoboxwedge.Zmin = -bwb / 2
-    lipoboxwedge.Xmin = -blb / 2
-    lipoboxwedge.Z2min = -bwt / 2
-    lipoboxwedge.X2min = -blt / 2 - 1
-    lipoboxwedge.Zmax = bwb / 2
-    lipoboxwedge.Xmax = blb / 2
-    lipoboxwedge.Z2max = bwt / 2
-    lipoboxwedge.X2max = blt / 2 + 1
-
-    lipoboxwedge.Ymin = -PLATE_THICKNESS  # -32.88
-    lipoboxwedge.Ymax = (
-        -LIPO_BOX_HEIGHT - LIPO_BOX_HEIGHT2 + 3.00
-    )  # CAVITY_HEIGHT + 3 - PLATE_THICKNESS  # 10 mm for lipo, 3 for tolerance and lower into the casing
-
-    lipoboxwedge.Placement = App.Placement(
-        App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
-    )
+    # lipoboxwedge = doc.addObject("Part::Wedge", "lipoboxwedge")
+    # lipoboxwedge.Zmin = -BASE_TOP_WIDTH / 2
+    # lipoboxwedge.Xmin = -COLLAR_WIDTH / 2
+    # lipoboxwedge.Z2min = -BASE_TOP_WIDTH / 2
+    # lipoboxwedge.X2min = -BASE_TOP_LENGTH / 2 - 1
+    # lipoboxwedge.Zmax = BASE_TOP_WIDTH / 2
+    # lipoboxwedge.Xmax = COLLAR_WIDTH / 2
+    # lipoboxwedge.Z2max = BASE_TOP_WIDTH / 2
+    # lipoboxwedge.X2max = BASE_TOP_LENGTH / 2 + 1
+    #
+    # lipoboxwedge.Ymin = -PLATE_THICKNESS  # -32.88
+    # lipoboxwedge.Ymax = (
+    #     -INNER_EDGE_HEIGHT - OUTER_EDGE_HEIGHT + 3.00
+    # )  # CAVITY_HEIGHT + 3 - PLATE_THICKNESS  # 10 mm for lipo, 3 for tolerance and lower into the casing
+    #
+    # lipoboxwedge.Placement = App.Placement(
+    #     App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
+    # )
 
     surfacewedge = doc.addObject("Part::Wedge", "surfacewedge")
-    surfacewedge.Zmin = -bwb / 2
-    surfacewedge.Xmin = -blb / 2
-    surfacewedge.Z2min = -bwt / 2
-    surfacewedge.X2min = -blt / 2 - 1
-    surfacewedge.Zmax = -bwb / 2 + 2
-    surfacewedge.Xmax = blb / 2
-    surfacewedge.Z2max = -bwt / 2 + 2
-    surfacewedge.X2max = blt / 2 + 1
+    surfacewedge.Zmin = -BASE_TOP_WIDTH / 2
+    surfacewedge.Xmin = -COLLAR_WIDTH / 2
+    surfacewedge.Z2min = -BASE_TOP_WIDTH / 2
+    surfacewedge.X2min = -BASE_TOP_LENGTH / 2 - 1
+    surfacewedge.Zmax = -BASE_TOP_WIDTH / 2 + 2
+    surfacewedge.Xmax = COLLAR_WIDTH / 2
+    surfacewedge.Z2max = -BASE_TOP_WIDTH / 2 + 2
+    surfacewedge.X2max = BASE_TOP_LENGTH / 2 + 1
 
     surfacewedge.Ymin = -30
     surfacewedge.Ymax = (
-        -LIPO_BOX_HEIGHT - LIPO_BOX_HEIGHT2 + 3.00
+        -INNER_EDGE_HEIGHT - OUTER_EDGE_HEIGHT + MAX_BASE_Y
     )  # CAVITY_HEIGHT + 3 - PLATE_THICKNESS  # 10 mm for lipo, 3 for tolerance and lower into the casing
 
     surfacewedge.Placement = App.Placement(
@@ -206,31 +166,32 @@ def pcb_platform(doc, curved_base):
     )
 
     surfacewedge2 = doc.addObject("Part::Wedge", "surfacewedge2")
-    surfacewedge2.Zmin = bwb / 2 - 2
-    surfacewedge2.Xmin = -blb / 2
-    surfacewedge2.Z2min = bwt / 2 - 2
-    surfacewedge2.X2min = -blt / 2 - 1
-    surfacewedge2.Zmax = bwb / 2
-    surfacewedge2.Xmax = blb / 2
-    surfacewedge2.Z2max = bwt / 2
-    surfacewedge2.X2max = blt / 2 + 1
+    surfacewedge2.Zmin = BASE_TOP_WIDTH / 2 - 2
+    surfacewedge2.Xmin = -COLLAR_WIDTH / 2
+    surfacewedge2.Z2min = BASE_TOP_WIDTH / 2 - 2
+    surfacewedge2.X2min = -BASE_TOP_LENGTH / 2 - 1
+    surfacewedge2.Zmax = BASE_TOP_WIDTH / 2
+    surfacewedge2.Xmax = COLLAR_WIDTH / 2
+    surfacewedge2.Z2max = BASE_TOP_WIDTH / 2
+    surfacewedge2.X2max = BASE_TOP_LENGTH / 2 + 1
 
     surfacewedge2.Ymin = -30
     surfacewedge2.Ymax = (
-        -LIPO_BOX_HEIGHT - LIPO_BOX_HEIGHT2 + 3.00
+        -INNER_EDGE_HEIGHT - OUTER_EDGE_HEIGHT + MAX_BASE_Y
     )  # CAVITY_HEIGHT + 3 - PLATE_THICKNESS  # 10 mm for lipo, 3 for tolerance and lower into the casing
     surfacewedge2.Placement = App.Placement(
         App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
     )
 
     LipoFloor = doc.addObject("Part::Box", "LipoFloor")
-    LipoFloor.Length = blb
-    LipoFloor.Width = bwb
-    LipoFloor.Height = 30  # THICKNESS OF BASE AT THINNEST POINT
+    LipoFloor.Length = COLLAR_WIDTH
+    LipoFloor.Width = BASE_TOP_WIDTH
+    LipoFloor.Height = 30 + MAX_BASE_Y  # THICKNESS OF BASE AT THINNEST POINT
 
     ymin = -30
     LipoFloor.Placement = App.Placement(
-        App.Vector(-(blb) / 2, -(bwb) / 2, ymin), App.Rotation(App.Vector(0, 0, 1), 0)
+        App.Vector(-(COLLAR_WIDTH) / 2, -(BASE_TOP_WIDTH) / 2, ymin),
+        App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
     j = BOPTools.JoinFeatures.makeConnect(name="LipoFloorJoin")
@@ -247,7 +208,7 @@ def pcb_platform(doc, curved_base):
     doc.removeObject("LipoFloorJoin")
     doc.removeObject("lipobox1")
     doc.removeObject("lipobox2")
-    doc.removeObject("lipoboxwedge")
+    # doc.removeObject("lipoboxwedge")
     doc.removeObject("surfacewedge")
     doc.removeObject("surfacewedge2")
 
@@ -258,14 +219,11 @@ def pcb_platform(doc, curved_base):
     doc.recompute()
 
     baseholder = doc.addObject("Part::Feature", "baseholder")
-
     baseholder.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
 
     doc.recompute()
-
     doc.removeObject(fusion.Label)
     doc.removeObject(LipoFloor.Label)
-
     doc.removeObject(lipocase.Label)
 
     inner = create_cylinder(doc, offset=PLATE_THICKNESS)
@@ -292,7 +250,34 @@ def pcb_platform(doc, curved_base):
     doc.removeObject(fusion.Name)
     doc.removeObject(FullBase.Name)
     doc.removeObject(curved_base.Name)
-    return baseholder
+    cutbox = doc.addObject("Part::Box", "cutbox")
+    cutbox.Length = BASE_TOP_LENGTH
+    cutbox.Width = BASE_TOP_WIDTH
+    cutbox.Height = 100
+
+    cutbox.Placement = App.Placement(
+        App.Vector(
+            -(BASE_TOP_LENGTH) / 2,
+            -(BASE_TOP_WIDTH) / 2,
+            MAX_BASE_Y,
+        ),
+        App.Rotation(App.Vector(0, 0, 1), 0),
+    )
+
+    # cut using the box
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = baseholder
+    cut.Tool = cutbox
+    doc.recompute()
+
+    baseholder2 = doc.addObject("Part::Feature", "baseholder")
+    baseholder2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cutbox.Name)
+    doc.removeObject(cut.Name)
+    doc.removeObject(baseholder.Name)
+
+    return baseholder2
 
 
 def add_surface(doc, baseholder):
@@ -361,17 +346,14 @@ def add_groove(doc, baseholder):
     # we have 3 for the wall thickness and then the cavity height
     CHIPBOX_MIN = CAVITY_HEIGHT + 3 - PLATE_THICKNESS
 
-    GROOVE_TOLERANCE = 0.5
-
-    INPUT_HEIGHT = 3.0
     INPUT_LENGTH = SEAL_LENGTH - GROOVE_TOLERANCE
     INPUT_WIDTH = SEAL_WIDTH - GROOVE_TOLERANCE
     InputBox1 = doc.addObject("Part::Box", "InputBox1")
     InputBox1.Length = INPUT_LENGTH
     InputBox1.Width = INPUT_WIDTH
-    InputBox1.Height = INPUT_HEIGHT
+    InputBox1.Height = GROOVE_HEIGHT
     InputBox1.Placement = App.Placement(
-        App.Vector(-(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, CHIPBOX_MIN - INPUT_HEIGHT),
+        App.Vector(-(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, MAX_BASE_Y - GROOVE_HEIGHT),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
@@ -395,15 +377,14 @@ def add_groove(doc, baseholder):
 
     doc.recompute()
 
-    INPUT_HEIGHT = 3.0
     INPUT_LENGTH = SEAL_LENGTH + 2.5 + GROOVE_TOLERANCE
     INPUT_WIDTH = SEAL_WIDTH + 2.5 + GROOVE_TOLERANCE
     InputBox2 = doc.addObject("Part::Box", "InputBox2")
     InputBox2.Length = INPUT_LENGTH
     InputBox2.Width = INPUT_WIDTH
-    InputBox2.Height = INPUT_HEIGHT
+    InputBox2.Height = GROOVE_HEIGHT
     InputBox2.Placement = App.Placement(
-        App.Vector(-(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, CHIPBOX_MIN - INPUT_HEIGHT),
+        App.Vector(-(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, MAX_BASE_Y - GROOVE_HEIGHT),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
@@ -488,11 +469,6 @@ def add_pcb_cutout(doc, baseholder):
 
 
 def make_screw_holes(doc, baseholder):
-    SIDE_OFFSET = 27.5
-    FRONT_OFFSET = -4.0
-    HEX_NUT_DIAM = 9.0
-    SCREW_ANGLE = 43
-
     ScrewCut1 = doc.addObject("Part::Cylinder", "ScrewCut1")
     ScrewCut1.Height = 100
     ScrewCut1.Radius = HEX_NUT_DIAM / 2

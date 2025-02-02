@@ -5,84 +5,83 @@ import Part
 import Part, PartGui
 import Mesh
 import sys
+import math
 
+from math import sin, cos, radians
+from dimensions import *
 
-from base_case import build_base_case
-
-# this is the maximum height needed inside the case
-MAX_HEIGHT = 18
-
-# this is the thickness of the curved base
-PLATE_THICKNESS = 10
-
-# this is the thickness of the base once the inset has been cut out
-FLOOR_THICKNESS = 3
-
-
-# the top of the base is a location 0,0,0
-# the lowest edge of the base is at -10 in the centre
-
-# the total height is 3 + 18 + 3 + 3 = 27 which is floor thickness + the cavity height + the thickness of the lid + the thickness of the panel
-
-COLLAR_MAJOR_RADIUS = 350
-COLLAR_MINOR_RADIUS = 140
-COLLAR_WIDTH = 50
-
-PLATE_LENGTH = 128 + 20 + 20
-
-
-LIPO_WIDTH = 60 + 2
-LIPO_LENGTH = 40
-CAVITY_HEIGHT = 10
-
-
-CHIP_WIDTH = 88
-CHIP_LENGTH = 48
-CHIP_HEIGHT = 13
-
-
-SEAL_LENGTH = CHIP_LENGTH + 3 + 4
-SEAL_WIDTH = CHIP_WIDTH + 5
-
-
-bwb = SEAL_WIDTH + 4 + 4  # battery length bottom
-blb = 50  # battery width bottom
-bwt = SEAL_WIDTH + 4 + 4  # battery length top
-blt = SEAL_LENGTH + 4 + 4  # battery width top
-
-
-PANEL_WIDTH = 65
-PANEL_LENGTH = 65
-PANEL_HEIGHT = 3
-
-slb = blt + 4.5
-swb = bwt + 8
-slt2 = PANEL_LENGTH + 6
-
-swt2 = PANEL_WIDTH + 14 + 6  # 24 +GROW
-
-SCREW_LOCATION_W = 83  # PANEL_WIDTH + 13 # 24 +GROW
-SCREW_LOCATION_L = 63  # PANEL_LENGTH + 8
+#
+# # this is the maximum height needed inside the case
+# MAX_LID_Y = 18
+#
+# # this is the thickness of the curved base
+# PLATE_THICKNESS = 10
+#
+# # this is the thickness of the base once the inset has been cut out
+# FLOOR_THICKNESS = 3
+#
+#
+# # the top of the base is a location 0,0,0
+# # the lowest edge of the base is at -10 in the centre
+#
+# # the total height is 3 + 18 + 3 + 3 = 27 which is floor thickness + the cavity height + the thickness of the lid + the thickness of the panel
+#
+# COLLAR_MAJOR_RADIUS = 350
+# COLLAR_MINOR_RADIUS = 140
+# COLLAR_WIDTH = 50
+#
+# PLATE_LENGTH = 128 + 20 + 20
+#
+#
+# LIPO_WIDTH = 60 + 2
+# LIPO_LENGTH = 40
+# CAVITY_HEIGHT = 4
+#
+#
+# CHIP_WIDTH = 88
+# CHIP_LENGTH = 48
+# CHIP_HEIGHT = 13
+#
+#
+# SEAL_LENGTH = CHIP_LENGTH + 3 + 4
+# SEAL_WIDTH = CHIP_WIDTH + 5
+#
+#
+# bwb = SEAL_WIDTH + 4 + 4  # battery length bottom
+# blb = 50  # battery width bottom
+# bwt = SEAL_WIDTH + 4 + 4  # battery length top
+# blt = SEAL_LENGTH + 4 + 4  # battery width top
+#
+#
+# PANEL_WIDTH = 65
+# PANEL_LENGTH = 65
+# PANEL_HEIGHT = 3
+#
+# LID_BOTTOM_LENGTH = blt + 4.5
+# LID_BOTTOM_WIDTH = bwt + 8
+# LID_TOP_LENGTH = PANEL_LENGTH + 6
+# LID_TOP_WIDTH = PANEL_WIDTH + 14 + 6  # 24 +GROW
+#
+# SCREW_LOCATION_W = 83  # PANEL_WIDTH + 13 # 24 +GROW
+# SCREW_LOCATION_L = 63  # PANEL_LENGTH + 8
+#
 
 
 def build_lid_top(doc):
-    ymin = (
-        CAVITY_HEIGHT + 3 - PLATE_THICKNESS
-    )  # at this point the wedge must be wb x lb
-    ymax = MAX_HEIGHT
+    ymin = MAX_BASE_Y - INNER_EDGE_HEIGHT
 
     arduinobox1 = doc.addObject("Part::Wedge", "arduinobox1")
-    arduinobox1.Zmin = -swb / 2
-    arduinobox1.Xmin = -slb / 2
-    arduinobox1.Z2min = -swt2 / 2
-    arduinobox1.X2min = -slt2 / 2
-    arduinobox1.Zmax = swb / 2
-    arduinobox1.Xmax = slb / 2
-    arduinobox1.Z2max = swt2 / 2
-    arduinobox1.X2max = slt2 / 2
+    arduinobox1.Zmin = -LID_BOTTOM_WIDTH / 2
+    arduinobox1.Xmin = -LID_BOTTOM_LENGTH / 2
+    arduinobox1.Z2min = -LID_TOP_WIDTH / 2
+    arduinobox1.X2min = -LID_TOP_LENGTH / 2
+    arduinobox1.Zmax = LID_BOTTOM_WIDTH / 2
+    arduinobox1.Xmax = LID_BOTTOM_LENGTH / 2
+    arduinobox1.Z2max = LID_TOP_WIDTH / 2
+    arduinobox1.X2max = LID_TOP_LENGTH / 2
 
     arduinobox1.Ymin = ymin
-    arduinobox1.Ymax = MAX_HEIGHT
+    arduinobox1.Ymax = MAX_LID_Y
 
     arduinobox1.Placement = App.Placement(
         App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
@@ -116,20 +115,20 @@ def build_lid_top(doc):
 
 def build_lid_base(doc):
     ymin = -90  # at this point the wedge must be wb x lb
-    ymax = CAVITY_HEIGHT + 3 - PLATE_THICKNESS
+    ymax = MAX_BASE_Y - INNER_EDGE_HEIGHT
 
-    lower_width = 18  # 22.5 #25.5
-    lower_length = 140 + 10 + 6
+    lower_width = 17.1  # 22.5 #25.5
+    lower_length = 140 + 10 + 6 + 6.7
 
     arduinobox2 = doc.addObject("Part::Wedge", "arduinobox2")
     arduinobox2.Zmin = -lower_length / 2
     arduinobox2.Xmin = -lower_width / 2
-    arduinobox2.Z2min = -swb / 2
-    arduinobox2.X2min = -slb / 2
+    arduinobox2.Z2min = -LID_BOTTOM_WIDTH / 2
+    arduinobox2.X2min = -LID_BOTTOM_LENGTH / 2
     arduinobox2.Zmax = lower_length / 2
     arduinobox2.Xmax = lower_width / 2
-    arduinobox2.Z2max = swb / 2
-    arduinobox2.X2max = slb / 2
+    arduinobox2.Z2max = LID_BOTTOM_WIDTH / 2
+    arduinobox2.X2max = LID_BOTTOM_LENGTH / 2
 
     arduinobox2.Ymin = ymin
     arduinobox2.Ymax = ymax + 0.01
@@ -138,18 +137,18 @@ def build_lid_base(doc):
         App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
     )
 
-    CUT_LIPO_BOX_HEIGHT2 = 50
+    CUT_BOX_HEIGHT2 = 100
     lipobox2 = doc.addObject("Part::Box", "lipobox2")
     LIPO_BOX_HEIGHT2 = 2
     LIPO_BOX_HEIGHT = 3
-    lipobox2.Length = blt + 4
-    lipobox2.Width = bwt + 0.5
-    lipobox2.Height = CUT_LIPO_BOX_HEIGHT2
+    lipobox2.Length = BASE_TOP_LENGTH + 4
+    lipobox2.Width = BASE_TOP_WIDTH + 0.5
+    lipobox2.Height = CUT_BOX_HEIGHT2
     lipobox2.Placement = App.Placement(
         App.Vector(
-            -(blt + 4) / 2,
-            -(bwt + 0.5) / 2,
-            -LIPO_BOX_HEIGHT - CUT_LIPO_BOX_HEIGHT2 + 3,
+            -(BASE_TOP_LENGTH + 4) / 2,
+            -(BASE_TOP_WIDTH + 0.5) / 2,
+            MAX_BASE_Y - INNER_EDGE_HEIGHT - CUT_BOX_HEIGHT2,
         ),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
@@ -232,10 +231,10 @@ def build_lid_base(doc):
     fillet = doc.addObject("Part::Fillet", "Fillet")
     fillet.Base = arduinobox2a
     __fillets__ = []
-    __fillets__.append((1, 2.00, 2.00))
-    __fillets__.append((3, 2.00, 2.00))
-    __fillets__.append((13, 2.00, 2.00))
-    __fillets__.append((17, 2.00, 2.00))
+    __fillets__.append((7, 2.00, 2.00))
+    __fillets__.append((21, 2.00, 2.00))
+    __fillets__.append((41, 2.00, 2.00))
+    __fillets__.append((27, 2.00, 2.00))
 
     fillet.Edges = __fillets__
     del __fillets__
@@ -261,8 +260,11 @@ def add_supports(doc, mainlid):
     doc.support1.Angle2 = 90.00
     doc.support1.Angle3 = 360.00
 
+    ANGLE = 66
+    yloc = MAX_BASE_Y - INNER_EDGE_HEIGHT
+
     doc.support1.Placement = App.Placement(
-        App.Vector(0.00, -53.0, 1), App.Rotation(App.Vector(1, 0, 0), 65)
+        App.Vector(0.00, -53.7, yloc), App.Rotation(App.Vector(1, 0, 0), ANGLE)
     )
     doc.support1.Label = "support1"
 
@@ -275,7 +277,7 @@ def add_supports(doc, mainlid):
     doc.support2.Angle3 = 360.00
 
     doc.support2.Placement = App.Placement(
-        App.Vector(20.00, -53.0, 1), App.Rotation(App.Vector(1, 0, 0), 65)
+        App.Vector(23.00, -53.7, yloc), App.Rotation(App.Vector(1, 0, 0), ANGLE)
     )
     doc.support2.Label = "support2"
 
@@ -288,7 +290,7 @@ def add_supports(doc, mainlid):
     doc.support3.Angle3 = 360.00
 
     doc.support3.Placement = App.Placement(
-        App.Vector(-20.00, -53.0, 1), App.Rotation(App.Vector(1, 0, 0), 65)
+        App.Vector(-23.00, -53.7, yloc), App.Rotation(App.Vector(1, 0, 0), ANGLE)
     )
     doc.support3.Label = "support3"
 
@@ -301,7 +303,7 @@ def add_supports(doc, mainlid):
     doc.support4.Angle3 = 360.00
 
     doc.support4.Placement = App.Placement(
-        App.Vector(0.00, 53.0, 1), App.Rotation(App.Vector(1, 0, 0), -65)
+        App.Vector(0.00, 53.7, yloc), App.Rotation(App.Vector(1, 0, 0), -ANGLE)
     )
     doc.support4.Label = "support4"
 
@@ -314,7 +316,7 @@ def add_supports(doc, mainlid):
     doc.support5.Angle3 = 360.00
 
     doc.support5.Placement = App.Placement(
-        App.Vector(20.00, 53.0, 1), App.Rotation(App.Vector(1, 0, 0), -65)
+        App.Vector(23.00, 53.7, yloc), App.Rotation(App.Vector(1, 0, 0), -ANGLE)
     )
     doc.support5.Label = "support5"
 
@@ -327,7 +329,7 @@ def add_supports(doc, mainlid):
     doc.support6.Angle3 = 360.00
 
     doc.support6.Placement = App.Placement(
-        App.Vector(-20.00, 53.0, 1), App.Rotation(App.Vector(1, 0, 0), -65)
+        App.Vector(-23.00, 53.7, yloc), App.Rotation(App.Vector(1, 0, 0), -ANGLE)
     )
     doc.support6.Label = "support6"
 
@@ -366,11 +368,9 @@ def cut_panel(doc, mainlid):
     PanelCutterBox = doc.addObject("Part::Box", "PanelCutterBox")
     PanelCutterBox.Length = PANEL_LENGTH
     PanelCutterBox.Width = PANEL_WIDTH
-    PanelCutterBox.Height = PANEL_HEIGHT + 1
+    PanelCutterBox.Height = PANEL_HEIGHT
     PanelCutterBox.Placement = App.Placement(
-        App.Vector(
-            -(PANEL_LENGTH) / 2, -(PANEL_WIDTH) / 2, MAX_HEIGHT - PANEL_HEIGHT - 1
-        ),
+        App.Vector(-(PANEL_LENGTH) / 2, -(PANEL_WIDTH) / 2, MAX_LID_Y - PANEL_HEIGHT),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
@@ -392,6 +392,504 @@ def cut_panel(doc, mainlid):
     return mainlid2
 
 
+def add_marker(doc, mainlid):
+    marker1 = doc.addObject("Part::Sphere", "marker1")
+    doc.marker1.Radius = 5.00
+
+    doc.marker1.Placement = App.Placement(
+        App.Vector(-32.0, 32.0, 5), App.Rotation(App.Vector(1, 0, 0), 0)
+    )
+    doc.marker1.Label = "marker1"
+
+    marker2 = doc.addObject("Part::Sphere", "marker2")
+    doc.marker2.Radius = 5.00
+
+    doc.marker2.Placement = App.Placement(
+        App.Vector(-32.0, -32.0, 5), App.Rotation(App.Vector(1, 0, 0), 0)
+    )
+    doc.marker2.Label = "marker1"
+    doc.recompute()
+
+    fusion = doc.addObject("Part::MultiFuse", "fusion")
+    doc.fusion.Shapes = [mainlid, marker1]
+    doc.recompute()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+
+    mainlid2.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
+
+    doc.removeObject(fusion.Label)
+
+    doc.removeObject(mainlid.Name)
+
+    fusion = doc.addObject("Part::MultiFuse", "fusion")
+    doc.fusion.Shapes = [mainlid2, marker2]
+    doc.recompute()
+
+    mainlid3 = doc.addObject("Part::Feature", "mainlid3")
+
+    mainlid3.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
+
+    doc.removeObject(fusion.Label)
+
+    doc.removeObject(mainlid2.Name)
+    doc.removeObject("marker1")
+    doc.removeObject("marker2")
+
+    doc.recompute()
+    return mainlid3
+
+
+def cutout_lid(doc, mainlid):
+    bwbwtol = BASE_TOP_WIDTH + 0.5
+    blbwtol = BASE_TOP_LENGTH + 0.5
+    bwtwtol = BASE_TOP_WIDTH + 0.5
+    bltwtol = BASE_TOP_LENGTH + 0.5
+
+    basecut = doc.addObject("Part::Wedge", "basecut")
+    basecut.Zmin = -bwbwtol / 2
+    basecut.Xmin = -blbwtol / 2
+    basecut.Z2min = -bwtwtol / 2
+    basecut.X2min = -bltwtol / 2
+    basecut.Zmax = bwbwtol / 2
+    basecut.Xmax = blbwtol / 2
+    basecut.Z2max = bwtwtol / 2
+    basecut.X2max = bltwtol / 2
+
+    basecut.Ymin = -100
+    basecut.Ymax = (
+        CAVITY_HEIGHT + FLOOR_THICKNESS - PLATE_THICKNESS
+    )  # 10 mm for lipo, 3 for tolerance and lower into the casing
+
+    basecut.Placement = App.Placement(
+        App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
+    )
+
+    cutchipbox = doc.addObject("Part::Cut", "cutchipbox")
+    cutchipbox.Base = mainlid
+    cutchipbox.Tool = basecut
+    doc.recompute()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Label = "mainlid2"
+    mainlid2.Shape = Part.Solid(Part.Shell(cutchipbox.Shape.Faces))
+
+    doc.removeObject("basecut")
+
+    doc.removeObject("cutchipbox")
+    doc.removeObject(mainlid.Name)
+
+    # chipcutter
+
+    # first calculate the width of the outer box just below the panel
+    ymin = MAX_BASE_Y - INNER_EDGE_HEIGHT
+    ymax = MAX_LID_Y
+
+    l1 = LID_BOTTOM_WIDTH
+    l2 = LID_TOP_WIDTH
+
+    ypanel = MAX_LID_Y - PANEL_HEIGHT - ROOF_THICKNESS
+
+    # width at ypanel
+    CUT_TOP_WIDTH = l1 + (l2 - l1) * (ypanel - ymin) / (ymax - ymin)
+    CUT_TOP_WIDTH = CUT_TOP_WIDTH - 4  # add 2mm wall at each side
+
+    ChipCutterBox1 = doc.addObject("Part::Wedge", "ChipCutterBox1")
+    ChipCutterBox1.Xmin = -(SEAL_LENGTH) / 2
+    ChipCutterBox1.X2min = -(SEAL_LENGTH) / 2
+    ChipCutterBox1.Xmax = (SEAL_LENGTH) / 2
+    ChipCutterBox1.X2max = (SEAL_LENGTH) / 2
+
+    ChipCutterBox1.Zmin = -(SEAL_WIDTH) / 2
+    ChipCutterBox1.Z2min = -(CUT_TOP_WIDTH) / 2
+    ChipCutterBox1.Zmax = (SEAL_WIDTH) / 2
+    ChipCutterBox1.Z2max = (CUT_TOP_WIDTH) / 2
+
+    ChipCutterBox1.Ymin = MAX_BASE_Y
+    ChipCutterBox1.Ymax = CHIP_HEIGHT + FLOOR_THICKNESS - PLATE_THICKNESS
+    ChipCutterBox1.Placement = App.Placement(
+        App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
+    )
+
+    fillet = doc.addObject("Part::Fillet", "Fillet")
+    fillet.Base = ChipCutterBox1
+    __fillets__ = []
+    __fillets__.append((2, 2.00, 2.00))
+    __fillets__.append((3, 2.00, 2.00))
+    __fillets__.append((4, 2.00, 2.00))
+    __fillets__.append((6, 2.00, 2.00))
+    __fillets__.append((7, 2.00, 2.00))
+    __fillets__.append((8, 2.00, 2.00))
+    __fillets__.append((11, 2.00, 2.00))
+    __fillets__.append((12, 2.00, 2.00))
+    fillet.Edges = __fillets__
+    del __fillets__
+
+    doc.recompute()
+
+    ChipCutterBox = App.ActiveDocument.addObject("Part::Feature", "ChipCutterBox")
+    ChipCutterBox.Label = "ChipCutterBox"
+    ChipCutterBox.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))  #
+
+    doc.removeObject("Fillet")
+    doc.removeObject("ChipCutterBox1")
+
+    cutchipbox = doc.addObject("Part::Cut", "cutchipbox")
+    cutchipbox.Base = mainlid2
+    cutchipbox.Tool = ChipCutterBox
+    doc.recompute()
+
+    mainlid = doc.addObject("Part::Feature", "mainlid")
+    mainlid.Label = "mainlid"
+    mainlid.Shape = Part.Solid(Part.Shell(cutchipbox.Shape.Faces))
+
+    doc.removeObject("cutchipbox")
+    doc.removeObject(mainlid2.Name)
+
+    doc.removeObject("ChipCutterBox")
+
+    return mainlid
+
+
+def seal_protrusion(doc, mainlid):
+    # SEAL_LENGTH = CHIP_LENGTH + 3
+    # SEAL_WIDTH = CHIP_WIDTH + 2 + 3
+    SealBox1 = doc.addObject("Part::Box", "SealBox1")
+    SealBox1.Length = SEAL_LENGTH
+    SealBox1.Width = SEAL_WIDTH
+    SealBox1.Height = SEAL_HEIGHT + 1
+    SealBox1.Placement = App.Placement(
+        App.Vector(-(SEAL_LENGTH) / 2, -(SEAL_WIDTH) / 2, MAX_BASE_Y - SEAL_HEIGHT),
+        App.Rotation(App.Vector(0, 0, 1), 0),
+    )
+
+    fillet = doc.addObject("Part::Fillet", "Fillet")
+    fillet.Base = SealBox1
+    __fillets__ = []
+    __fillets__.append((1, 2.00, 2.00))
+    __fillets__.append((3, 2.00, 2.00))
+    __fillets__.append((5, 2.00, 2.00))
+    __fillets__.append((7, 2.00, 2.00))
+    fillet.Edges = __fillets__
+    del __fillets__
+
+    doc.recompute()
+
+    SealBox1a = App.ActiveDocument.addObject("Part::Feature", "SealBox1a")
+    SealBox1a.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))
+
+    doc.removeObject("Fillet")
+    doc.removeObject("SealBox1")
+
+    doc.recompute()
+
+    SEAL_LENGTH2 = SEAL_LENGTH + 2.5
+    SEAL_WIDTH2 = SEAL_WIDTH + 2.5
+    SealBox2 = doc.addObject("Part::Box", "SealBox2")
+    SealBox2.Length = SEAL_LENGTH2
+    SealBox2.Width = SEAL_WIDTH2
+    SealBox2.Height = SEAL_HEIGHT + 1
+    SealBox2.Placement = App.Placement(
+        App.Vector(-(SEAL_LENGTH2) / 2, -(SEAL_WIDTH2) / 2, MAX_BASE_Y - SEAL_HEIGHT),
+        App.Rotation(App.Vector(0, 0, 1), 0),
+    )
+
+    fillet = doc.addObject("Part::Fillet", "Fillet")
+    fillet.Base = SealBox2
+    __fillets__ = []
+    __fillets__.append((1, 2.00, 2.00))
+    __fillets__.append((3, 2.00, 2.00))
+    __fillets__.append((5, 2.00, 2.00))
+    __fillets__.append((7, 2.00, 2.00))
+    fillet.Edges = __fillets__
+    del __fillets__
+
+    doc.recompute()
+
+    SealBox2a = App.ActiveDocument.addObject("Part::Feature", "SealBox2a")
+    SealBox2a.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))
+
+    doc.removeObject("Fillet")
+    doc.removeObject("SealBox2")
+
+    doc.recompute()
+
+    sealboxcut = doc.addObject("Part::Cut", "sealboxcut")
+    sealboxcut.Base = SealBox2a
+    sealboxcut.Tool = SealBox1a
+    doc.recompute()
+
+    sealbox = doc.addObject("Part::Feature", "sealbox")
+    sealbox.Label = "sealbox"
+    sealbox.Shape = Part.Solid(Part.Shell(sealboxcut.Shape.Faces))
+
+    doc.removeObject("sealboxcut")
+    doc.recompute()
+
+    doc.removeObject("SealBox1a")
+    doc.removeObject("SealBox2a")
+
+    # stick seal and top together
+    j = BOPTools.JoinFeatures.makeConnect(name="TopJoin")
+    j.Objects = [mainlid, sealbox]
+    j.Proxy.execute(j)
+    j.purgeTouched()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Shape = Part.Solid(Part.Shell(doc.TopJoin.Shape.Faces))
+
+    doc.removeObject("TopJoin")
+    doc.removeObject(mainlid.Name)
+    doc.removeObject("sealbox")
+    return mainlid2
+
+
+def solar_panel_wire(doc, mainlid):
+    ellipse = doc.addObject("Part::Ellipsoid", "Ellipsoid")
+    doc.Ellipsoid.Radius1 = 20  # 15.00
+    doc.Ellipsoid.Radius2 = 12.5
+    doc.Ellipsoid.Radius3 = 7.5
+    doc.Ellipsoid.Angle1 = -90.00
+    doc.Ellipsoid.Angle2 = 90.00
+    doc.Ellipsoid.Angle3 = 360.00
+    doc.Ellipsoid.Placement = App.Placement(
+        App.Vector(0.00, 15.50, MAX_LID_Y), App.Rotation(0.00, 0.00, 0.00, 1.00)
+    )
+    doc.Ellipsoid.Label = "Ellipsoid"
+
+    doc.recompute()
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid
+    cut.Tool = ellipse
+    doc.recompute()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid.Label)
+    doc.removeObject(ellipse.Label)
+    return mainlid2
+
+
+def add_screw_holes(doc, mainlid):
+    offset = 41
+    yshift = offset * sin(radians(-SCREW_ANGLE))
+    zshift = offset * cos(radians(-SCREW_ANGLE))
+
+    ScrewCut1 = doc.addObject("Part::Cylinder", "ScrewCut1")
+    ScrewCut1.Height = 100 + MAX_LID_Y + PLATE_THICKNESS
+    ScrewCut1.Radius = BIG_HEX_NUT_DIAM / 2
+
+    ScrewCut1.Placement = App.Placement(
+        App.Vector(
+            -SCREW_LOCATION_W / 2 + SIDE_OFFSET,
+            -SCREW_LOCATION_L / 2 - FRONT_OFFSET + yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), SCREW_ANGLE),
+    )
+
+    ScrewCut2 = doc.addObject("Part::Cylinder", "ScrewCut2")
+    ScrewCut2.Height = 100 + MAX_LID_Y + PLATE_THICKNESS
+    ScrewCut2.Radius = BIG_HEX_NUT_DIAM / 2
+    ScrewCut2.Placement = App.Placement(
+        App.Vector(
+            +SCREW_LOCATION_W / 2 - SIDE_OFFSET,
+            -SCREW_LOCATION_L / 2 - FRONT_OFFSET + yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), SCREW_ANGLE),
+    )
+
+    ScrewCut3 = doc.addObject("Part::Cylinder", "ScrewCut3")
+    ScrewCut3.Height = 100 + MAX_LID_Y + PLATE_THICKNESS
+    ScrewCut3.Radius = BIG_HEX_NUT_DIAM / 2
+    ScrewCut3.Placement = App.Placement(
+        App.Vector(
+            -SCREW_LOCATION_W / 2 + SIDE_OFFSET,
+            SCREW_LOCATION_L / 2 + FRONT_OFFSET - yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), -SCREW_ANGLE),
+    )
+
+    ScrewCut4 = doc.addObject("Part::Cylinder", "ScrewCut4")
+    ScrewCut4.Height = 100 + MAX_LID_Y + PLATE_THICKNESS
+    ScrewCut4.Radius = BIG_HEX_NUT_DIAM / 2
+    ScrewCut4.Placement = App.Placement(
+        App.Vector(
+            +SCREW_LOCATION_W / 2 - SIDE_OFFSET,
+            SCREW_LOCATION_L / 2 + FRONT_OFFSET - yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), -SCREW_ANGLE),
+    )
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid
+    cut.Tool = ScrewCut1
+    doc.recompute()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Label = "mainlid2"
+    mainlid2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid.Label)
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid2
+    cut.Tool = ScrewCut2
+    doc.recompute()
+
+    mainlid = doc.addObject("Part::Feature", "mainlid")
+    mainlid.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid2.Label)
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid
+    cut.Tool = ScrewCut3
+    doc.recompute()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid.Label)
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid2
+    cut.Tool = ScrewCut4
+    doc.recompute()
+
+    mainlid = doc.addObject("Part::Feature", "mainlid")
+    mainlid.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid2.Label)
+
+    doc.removeObject(ScrewCut1.Label)
+    doc.removeObject(ScrewCut2.Label)
+    doc.removeObject(ScrewCut3.Label)
+    doc.removeObject(ScrewCut4.Label)
+
+    # hex nuts for the lipo base
+
+    offset = 30
+    yshift = offset * sin(radians(-SCREW_ANGLE))
+    zshift = offset * cos(radians(-SCREW_ANGLE))
+
+    ScrewCut1 = doc.addObject("Part::Cylinder", "ScrewCut1")
+    ScrewCut1.Height = 15
+    ScrewCut1.Radius = HEX_NUT_DIAM / 2
+
+    ScrewCut1.Placement = App.Placement(
+        App.Vector(
+            -SCREW_LOCATION_W / 2 + SIDE_OFFSET,
+            -SCREW_LOCATION_L / 2 - FRONT_OFFSET + yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), SCREW_ANGLE),
+    )
+
+    # ScrewCut1.Placement = App.Placement(App.Vector(-10.0,-10.0,0),App.Rotation(App.Vector(1,0,0),56))
+
+    ScrewCut2 = doc.addObject("Part::Cylinder", "ScrewCut2")
+    ScrewCut2.Height = 15
+    ScrewCut2.Radius = HEX_NUT_DIAM / 2
+    ScrewCut2.Placement = App.Placement(
+        App.Vector(
+            +SCREW_LOCATION_W / 2 - SIDE_OFFSET,
+            -SCREW_LOCATION_L / 2 - FRONT_OFFSET + yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), SCREW_ANGLE),
+    )
+
+    ScrewCut3 = doc.addObject("Part::Cylinder", "ScrewCut3")
+    ScrewCut3.Height = 15
+    ScrewCut3.Radius = HEX_NUT_DIAM / 2
+    ScrewCut3.Placement = App.Placement(
+        App.Vector(
+            -SCREW_LOCATION_W / 2 + SIDE_OFFSET,
+            SCREW_LOCATION_L / 2 + FRONT_OFFSET - yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), -SCREW_ANGLE),
+    )
+
+    ScrewCut4 = doc.addObject("Part::Cylinder", "ScrewCut4")
+    ScrewCut4.Height = 15
+    ScrewCut4.Radius = HEX_NUT_DIAM / 2
+    ScrewCut4.Placement = App.Placement(
+        App.Vector(
+            +SCREW_LOCATION_W / 2 - SIDE_OFFSET,
+            SCREW_LOCATION_L / 2 + FRONT_OFFSET - yshift,
+            -50 + zshift,
+        ),
+        App.Rotation(App.Vector(1, 0, 0), -SCREW_ANGLE),
+    )
+
+    # START OF HOLES INTO BASE
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid
+    cut.Tool = ScrewCut1
+    doc.recompute()
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Label = "mainlid2"
+    mainlid2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid.Label)
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid2
+    cut.Tool = ScrewCut2
+    doc.recompute()
+
+    mainlid = doc.addObject("Part::Feature", "mainlid")
+    mainlid.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid2.Label)
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid
+    cut.Tool = ScrewCut3
+    doc.recompute()
+
+    mainlid2 = doc.addObject("Part::Feature", "mainlid2")
+    mainlid2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid.Label)
+
+    cut = doc.addObject("Part::Cut", "Cut")
+    cut.Base = mainlid2
+    cut.Tool = ScrewCut4
+    doc.recompute()
+
+    mainlid = doc.addObject("Part::Feature", "mainlid")
+    mainlid.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
+
+    doc.removeObject(cut.Label)
+    doc.removeObject(mainlid2.Label)
+
+    doc.removeObject(ScrewCut1.Label)
+    doc.removeObject(ScrewCut2.Label)
+    doc.removeObject(ScrewCut3.Label)
+    doc.removeObject(ScrewCut4.Label)
+
+    doc.recompute()
+
+    return mainlid
+
+
 def build_top_case(doc):
     toplid = build_lid_top(doc)
     baselid = build_lid_base(doc)
@@ -410,5 +908,9 @@ def build_top_case(doc):
     doc.recompute()
 
     mainlid = add_supports(doc, mainlid)
-
     mainlid = cut_panel(doc, mainlid)
+    mainlid = add_marker(doc, mainlid)
+    mainlid = cutout_lid(doc, mainlid)
+    mainlid = seal_protrusion(doc, mainlid)
+    mainlid = solar_panel_wire(doc, mainlid)
+    mainlid = add_screw_holes(doc, mainlid)
