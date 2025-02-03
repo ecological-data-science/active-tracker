@@ -127,25 +127,6 @@ def pcb_platform(doc, curved_base):
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    # lipoboxwedge = doc.addObject("Part::Wedge", "lipoboxwedge")
-    # lipoboxwedge.Zmin = -BASE_TOP_WIDTH / 2
-    # lipoboxwedge.Xmin = -COLLAR_WIDTH / 2
-    # lipoboxwedge.Z2min = -BASE_TOP_WIDTH / 2
-    # lipoboxwedge.X2min = -BASE_TOP_LENGTH / 2 - 1
-    # lipoboxwedge.Zmax = BASE_TOP_WIDTH / 2
-    # lipoboxwedge.Xmax = COLLAR_WIDTH / 2
-    # lipoboxwedge.Z2max = BASE_TOP_WIDTH / 2
-    # lipoboxwedge.X2max = BASE_TOP_LENGTH / 2 + 1
-    #
-    # lipoboxwedge.Ymin = -PLATE_THICKNESS  # -32.88
-    # lipoboxwedge.Ymax = (
-    #     -INNER_EDGE_HEIGHT - OUTER_EDGE_HEIGHT + 3.00
-    # )  # CAVITY_HEIGHT + 3 - PLATE_THICKNESS  # 10 mm for lipo, 3 for tolerance and lower into the casing
-    #
-    # lipoboxwedge.Placement = App.Placement(
-    #     App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
-    # )
-
     surfacewedge = doc.addObject("Part::Wedge", "surfacewedge")
     surfacewedge.Zmin = -BASE_TOP_WIDTH / 2
     surfacewedge.Xmin = -COLLAR_WIDTH / 2
@@ -441,7 +422,6 @@ def add_groove(doc, baseholder):
 
 
 def add_pcb_cutout(doc, baseholder):
-
     # width is 88 mm
     # length is 48 mm
     # corners are 4.8 mm
@@ -452,7 +432,9 @@ def add_pcb_cutout(doc, baseholder):
     CutterBox.Height = CAVITY_HEIGHT
     CutterBox.Placement = App.Placement(
         App.Vector(
-            -(CHIP_LENGTH + CHIP_TOLERANCE) / 2, -(CHIP_WIDTH + CHIP_TOLERANCE) / 2, FLOOR_THICKNESS - PLATE_THICKNESS
+            -(CHIP_LENGTH + CHIP_TOLERANCE) / 2,
+            -(CHIP_WIDTH + CHIP_TOLERANCE) / 2,
+            FLOOR_THICKNESS - PLATE_THICKNESS,
         ),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
@@ -482,8 +464,8 @@ def add_pcb_cutout(doc, baseholder):
 
     CutCorner.Placement = App.Placement(
         App.Vector(
-            -(CHIP_LENGTH + CHIP_TOLERANCE)/ 2 - 0.0  ,
-            (CHIP_WIDTH+CHIP_TOLERANCE) / 2 - 0.0 ,
+            -(CHIP_LENGTH + CHIP_TOLERANCE) / 2 - 0.0,
+            (CHIP_WIDTH + CHIP_TOLERANCE) / 2 - 0.0,
             -50,
         ),
         App.Rotation(App.Vector(1, 0, 0), 0),

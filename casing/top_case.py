@@ -10,62 +10,6 @@ import math
 from math import sin, cos, radians
 from dimensions import *
 
-#
-# # this is the maximum height needed inside the case
-# MAX_LID_Y = 18
-#
-# # this is the thickness of the curved base
-# PLATE_THICKNESS = 10
-#
-# # this is the thickness of the base once the inset has been cut out
-# FLOOR_THICKNESS = 3
-#
-#
-# # the top of the base is a location 0,0,0
-# # the lowest edge of the base is at -10 in the centre
-#
-# # the total height is 3 + 18 + 3 + 3 = 27 which is floor thickness + the cavity height + the thickness of the lid + the thickness of the panel
-#
-# COLLAR_MAJOR_RADIUS = 350
-# COLLAR_MINOR_RADIUS = 140
-# COLLAR_WIDTH = 50
-#
-# PLATE_LENGTH = 128 + 20 + 20
-#
-#
-# LIPO_WIDTH = 60 + 2
-# LIPO_LENGTH = 40
-# CAVITY_HEIGHT = 4
-#
-#
-# CHIP_WIDTH = 88
-# CHIP_LENGTH = 48
-# CHIP_HEIGHT = 13
-#
-#
-# SEAL_LENGTH = CHIP_LENGTH + 3 + 4
-# SEAL_WIDTH = CHIP_WIDTH + 5
-#
-#
-# bwb = SEAL_WIDTH + 4 + 4  # battery length bottom
-# blb = 50  # battery width bottom
-# bwt = SEAL_WIDTH + 4 + 4  # battery length top
-# blt = SEAL_LENGTH + 4 + 4  # battery width top
-#
-#
-# PANEL_WIDTH = 65
-# PANEL_LENGTH = 65
-# PANEL_HEIGHT = 3
-#
-# LID_BOTTOM_LENGTH = blt + 4.5
-# LID_BOTTOM_WIDTH = bwt + 8
-# LID_TOP_LENGTH = PANEL_LENGTH + 6
-# LID_TOP_WIDTH = PANEL_WIDTH + 14 + 6  # 24 +GROW
-#
-# SCREW_LOCATION_W = 83  # PANEL_WIDTH + 13 # 24 +GROW
-# SCREW_LOCATION_L = 63  # PANEL_LENGTH + 8
-#
-
 
 def build_lid_top(doc):
     ymin = MAX_BASE_Y - INNER_EDGE_HEIGHT
@@ -1026,29 +970,6 @@ def add_gripper(doc, mainlid):
     doc.removeObject("gripper2")
 
     return mainlid2
-
-    return
-    raise Exception("Not implemented")
-    ymin = MAX_BASE_Y - INNER_EDGE_HEIGHT
-
-    arduinobox1 = doc.addObject("Part::Wedge", "arduinobox1")
-    arduinobox1.Zmin = -LID_BOTTOM_WIDTH / 2
-    arduinobox1.Xmin = -LID_BOTTOM_LENGTH / 2
-    arduinobox1.Z2min = -LID_TOP_WIDTH / 2
-    arduinobox1.X2min = -LID_TOP_LENGTH / 2
-    arduinobox1.Zmax = LID_BOTTOM_WIDTH / 2
-    arduinobox1.Xmax = LID_BOTTOM_LENGTH / 2
-    arduinobox1.Z2max = LID_TOP_WIDTH / 2
-    arduinobox1.X2max = LID_TOP_LENGTH / 2
-
-    arduinobox1.Ymin = ymin
-    arduinobox1.Ymax = MAX_LID_Y
-
-    arduinobox1.Placement = App.Placement(
-        App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
-    )
-
-    raise Exception("Not implemented")
 
 
 def build_top_case(doc):
