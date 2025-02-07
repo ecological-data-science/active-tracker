@@ -1,39 +1,39 @@
-from FreeCAD import Base
-import FreeCAD as App
-import BOPTools.JoinFeatures
-import Part
-import Part, PartGui
-import Mesh
+import importlib
 import sys
+from math import cos, radians, sin
 
-from math import sin, cos, radians
+import BOPTools.JoinFeatures
+import FreeCAD as App
+import Mesh
+import Part
+import PartGui
+from FreeCAD import Base
+
 from dimensions import *
 
-import importlib
-
-importlib.reload(sys.modules["dimensions"])
+importlib.reload(sys.modules['dimensions'])
 
 
 def create_cylinder(doc, offset):
-    ellipse = doc.addObject("Part::Ellipse", "ellipse")
+    ellipse = doc.addObject('Part::Ellipse', 'ellipse')
     ellipse.MajorRadius = COLLAR_MAJOR_RADIUS - offset
     ellipse.MinorRadius = COLLAR_MINOR_RADIUS - offset
     ellipse.Placement = App.Placement(
         App.Vector(-COLLAR_WIDTH / 2 - offset / 2, 0, -COLLAR_MAJOR_RADIUS),
         App.Rotation(App.Vector(0, 1, 0), 90),
     )
-    ellipse.Label = "ellipse"
+    ellipse.Label = 'ellipse'
     doc.recompute()
 
-    f = doc.addObject("Part::Extrusion", "Extrude")
+    f = doc.addObject('Part::Extrusion', 'Extrude')
     f.Base = ellipse
-    f.DirMode = "Normal"
+    f.DirMode = 'Normal'
     f.LengthFwd = COLLAR_WIDTH + offset
     f.Solid = True
     doc.recompute()
 
-    cylinder = doc.addObject("Part::Feature", "Cylinder2")
-    cylinder.Label = "Cylinder2"
+    cylinder = doc.addObject('Part::Feature', 'Cylinder2')
+    cylinder.Label = 'Cylinder2'
     cylinder.Shape = Part.Solid(Part.Shell(f.Shape.Faces))
     doc.removeObject(ellipse.Name)
     doc.removeObject(f.Name)
@@ -51,13 +51,13 @@ def create_curved_base(doc):
     outer = create_cylinder(doc, offset=0)
     inner = create_cylinder(doc, offset=PLATE_THICKNESS)
 
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     doc.Cut.Base = outer
     doc.Cut.Tool = inner
     doc.recompute()
 
-    full_cylinder = doc.addObject("Part::Feature", "Cut_solid")
-    full_cylinder.Label = "Cut (Solid)"
+    full_cylinder = doc.addObject('Part::Feature', 'Cut_solid')
+    full_cylinder.Label = 'Cut (Solid)'
     full_cylinder.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cut.Name)
@@ -70,7 +70,7 @@ def create_curved_base(doc):
     lower_width, lower_length = 18, 156
     upper_width, upper_length = 68, 110
 
-    retainer = doc.addObject("Part::Wedge", "retainer")
+    retainer = doc.addObject('Part::Wedge', 'retainer')
     retainer.Zmin, retainer.Xmin = -lower_length / 2, -lower_width / 2
     retainer.Z2min, retainer.X2min = -upper_length / 2, -upper_width / 2
     retainer.Zmax, retainer.Xmax = lower_length / 2, lower_width / 2
@@ -81,7 +81,7 @@ def create_curved_base(doc):
         App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
     )
 
-    common = doc.addObject("Part::MultiCommon", "common")
+    common = doc.addObject('Part::MultiCommon', 'common')
     doc.common.Shapes = [
         doc.retainer,
         full_cylinder,
@@ -89,7 +89,7 @@ def create_curved_base(doc):
 
     doc.recompute()
 
-    curved_base = doc.addObject("Part::Feature", "curved_base")
+    curved_base = doc.addObject('Part::Feature', 'curved_base')
     curved_base.Shape = Part.Solid(Part.Shell(common.Shape.Faces))
 
     doc.removeObject(common.Name)
@@ -99,7 +99,7 @@ def create_curved_base(doc):
 
 
 def pcb_platform(doc, curved_base):
-    lipobox1 = doc.addObject("Part::Box", "lipobox1")
+    lipobox1 = doc.addObject('Part::Box', 'lipobox1')
     lipobox1.Length = BASE_TOP_LENGTH
     lipobox1.Width = BASE_TOP_WIDTH
     lipobox1.Height = INNER_EDGE_HEIGHT
@@ -113,7 +113,7 @@ def pcb_platform(doc, curved_base):
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    lipobox2 = doc.addObject("Part::Box", "lipobox2")
+    lipobox2 = doc.addObject('Part::Box', 'lipobox2')
     lipobox2.Length = BASE_TOP_LENGTH + 2
     lipobox2.Width = BASE_TOP_WIDTH
     lipobox2.Height = OUTER_EDGE_HEIGHT
@@ -127,7 +127,7 @@ def pcb_platform(doc, curved_base):
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    surfacewedge = doc.addObject("Part::Wedge", "surfacewedge")
+    surfacewedge = doc.addObject('Part::Wedge', 'surfacewedge')
     surfacewedge.Zmin = -BASE_TOP_WIDTH / 2
     surfacewedge.Xmin = -COLLAR_WIDTH / 2
     surfacewedge.Z2min = -BASE_TOP_WIDTH / 2
@@ -146,7 +146,7 @@ def pcb_platform(doc, curved_base):
         App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
     )
 
-    surfacewedge2 = doc.addObject("Part::Wedge", "surfacewedge2")
+    surfacewedge2 = doc.addObject('Part::Wedge', 'surfacewedge2')
     surfacewedge2.Zmin = BASE_TOP_WIDTH / 2 - 2
     surfacewedge2.Xmin = -COLLAR_WIDTH / 2
     surfacewedge2.Z2min = BASE_TOP_WIDTH / 2 - 2
@@ -164,7 +164,7 @@ def pcb_platform(doc, curved_base):
         App.Vector(0, 0, 0), App.Rotation(App.Vector(1, 0, 0), 90)
     )
 
-    LipoFloor = doc.addObject("Part::Box", "LipoFloor")
+    LipoFloor = doc.addObject('Part::Box', 'LipoFloor')
     LipoFloor.Length = COLLAR_WIDTH
     LipoFloor.Width = BASE_TOP_WIDTH
     LipoFloor.Height = 30 + MAX_BASE_Y  # THICKNESS OF BASE AT THINNEST POINT
@@ -175,31 +175,36 @@ def pcb_platform(doc, curved_base):
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    j = BOPTools.JoinFeatures.makeConnect(name="LipoFloorJoin")
-    j.Objects = [doc.lipobox1, doc.lipobox2, doc.surfacewedge, doc.surfacewedge2]
+    j = BOPTools.JoinFeatures.makeConnect(name='LipoFloorJoin')
+    j.Objects = [
+        doc.lipobox1,
+        doc.lipobox2,
+        doc.surfacewedge,
+        doc.surfacewedge2,
+    ]
     j.Proxy.execute(j)
     j.purgeTouched()
     for obj in j.ViewObject.Proxy.claimChildren():
         obj.ViewObject.hide()
 
-    lipocase = doc.addObject("Part::Feature", "lipocase")
-    lipocase.Label = "lipocase"
+    lipocase = doc.addObject('Part::Feature', 'lipocase')
+    lipocase.Label = 'lipocase'
     lipocase.Shape = Part.Solid(Part.Shell(doc.LipoFloorJoin.Shape.Faces))
 
-    doc.removeObject("LipoFloorJoin")
-    doc.removeObject("lipobox1")
-    doc.removeObject("lipobox2")
+    doc.removeObject('LipoFloorJoin')
+    doc.removeObject('lipobox1')
+    doc.removeObject('lipobox2')
     # doc.removeObject("lipoboxwedge")
-    doc.removeObject("surfacewedge")
-    doc.removeObject("surfacewedge2")
+    doc.removeObject('surfacewedge')
+    doc.removeObject('surfacewedge2')
 
     doc.recompute()
 
-    fusion = doc.addObject("Part::MultiFuse", "Fusion")
+    fusion = doc.addObject('Part::MultiFuse', 'Fusion')
     doc.Fusion.Shapes = [doc.LipoFloor, doc.lipocase]
     doc.recompute()
 
-    baseholder = doc.addObject("Part::Feature", "baseholder")
+    baseholder = doc.addObject('Part::Feature', 'baseholder')
     baseholder.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
 
     doc.recompute()
@@ -208,30 +213,30 @@ def pcb_platform(doc, curved_base):
     doc.removeObject(lipocase.Label)
 
     inner = create_cylinder(doc, offset=PLATE_THICKNESS)
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     doc.Cut.Base = baseholder
     doc.Cut.Tool = inner
     doc.recompute()
 
-    FullBase = doc.addObject("Part::Feature", "FullBase")
-    FullBase.Label = "FullBase"
+    FullBase = doc.addObject('Part::Feature', 'FullBase')
+    FullBase.Label = 'FullBase'
     FullBase.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
-    doc.removeObject("Cut")
-    doc.removeObject("baseholder")
+    doc.removeObject('Cut')
+    doc.removeObject('baseholder')
     doc.removeObject(inner.Name)
     doc.recompute()
-    fusion = doc.addObject("Part::MultiFuse", "Fusion")
+    fusion = doc.addObject('Part::MultiFuse', 'Fusion')
     doc.Fusion.Shapes = [FullBase, curved_base]
     doc.recompute()
 
-    baseholder = doc.addObject("Part::Feature", "baseholder")
+    baseholder = doc.addObject('Part::Feature', 'baseholder')
 
     baseholder.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
 
     doc.removeObject(fusion.Name)
     doc.removeObject(FullBase.Name)
     doc.removeObject(curved_base.Name)
-    cutbox = doc.addObject("Part::Box", "cutbox")
+    cutbox = doc.addObject('Part::Box', 'cutbox')
     cutbox.Length = BASE_TOP_LENGTH
     cutbox.Width = BASE_TOP_WIDTH
     cutbox.Height = 100
@@ -246,12 +251,12 @@ def pcb_platform(doc, curved_base):
     )
 
     # cut using the box
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     cut.Base = baseholder
     cut.Tool = cutbox
     doc.recompute()
 
-    baseholder2 = doc.addObject("Part::Feature", "baseholder")
+    baseholder2 = doc.addObject('Part::Feature', 'baseholder')
     baseholder2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cutbox.Name)
@@ -264,50 +269,50 @@ def pcb_platform(doc, curved_base):
 def add_surface(doc, baseholder):
     # create the smooth surface edges
 
-    surf1 = doc.addObject("Surface::Filling", "surf1")
+    surf1 = doc.addObject('Surface::Filling', 'surf1')
     surf1.BoundaryEdges = [
-        (baseholder, "Edge3"),
-        (baseholder, "Edge4"),
-        (baseholder, "Edge5"),
-        (baseholder, "Edge12"),
-        (baseholder, "Edge28"),
-        (baseholder, "Edge30"),
+        (baseholder, 'Edge3'),
+        (baseholder, 'Edge4'),
+        (baseholder, 'Edge5'),
+        (baseholder, 'Edge12'),
+        (baseholder, 'Edge28'),
+        (baseholder, 'Edge30'),
     ]
 
-    surf2 = doc.addObject("Surface::Filling", "surf2")
+    surf2 = doc.addObject('Surface::Filling', 'surf2')
     surf2.BoundaryEdges = [
-        (baseholder, "Edge19"),
-        (baseholder, "Edge47"),
-        (baseholder, "Edge48"),
-        (baseholder, "Edge80"),
-        (baseholder, "Edge85"),
-        (baseholder, "Edge89"),
+        (baseholder, 'Edge19'),
+        (baseholder, 'Edge47'),
+        (baseholder, 'Edge48'),
+        (baseholder, 'Edge80'),
+        (baseholder, 'Edge85'),
+        (baseholder, 'Edge89'),
     ]
 
-    exsurf1 = doc.addObject("Part::Extrusion", "exsurf1")
+    exsurf1 = doc.addObject('Part::Extrusion', 'exsurf1')
     # f = doc.getObject('Extrude')
     exsurf1.Base = surf1  # App.getDocument('Unnamed').getObject('Surface')
-    exsurf1.DirMode = "Custom"
+    exsurf1.DirMode = 'Custom'
     exsurf1.Dir = App.Vector(1.0, 0.0, 0.0)
     exsurf1.DirLink = None
     exsurf1.LengthFwd = 0.0
     exsurf1.LengthRev = 10.0
     doc.recompute()
 
-    exsurf2 = doc.addObject("Part::Extrusion", "exsurf2")
+    exsurf2 = doc.addObject('Part::Extrusion', 'exsurf2')
     exsurf2.Base = surf2  # App.getDocument('Unnamed').getObject('Surface')
-    exsurf2.DirMode = "Custom"
+    exsurf2.DirMode = 'Custom'
     exsurf2.Dir = App.Vector(1.0, 0.0, 0.0)
     exsurf2.DirLink = None
     exsurf2.LengthFwd = 10.0
     exsurf2.LengthRev = 0.0
     doc.recompute()
 
-    fusion = doc.addObject("Part::MultiFuse", "Fusion")
+    fusion = doc.addObject('Part::MultiFuse', 'Fusion')
     doc.Fusion.Shapes = [baseholder, exsurf1, exsurf2]
     doc.recompute()
 
-    newbaseholder = doc.addObject("Part::Feature", "newbaseholder")
+    newbaseholder = doc.addObject('Part::Feature', 'newbaseholder')
 
     newbaseholder.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
 
@@ -329,16 +334,18 @@ def add_groove(doc, baseholder):
 
     INPUT_LENGTH = SEAL_LENGTH - GROOVE_TOLERANCE
     INPUT_WIDTH = SEAL_WIDTH - GROOVE_TOLERANCE
-    InputBox1 = doc.addObject("Part::Box", "InputBox1")
+    InputBox1 = doc.addObject('Part::Box', 'InputBox1')
     InputBox1.Length = INPUT_LENGTH
     InputBox1.Width = INPUT_WIDTH
     InputBox1.Height = GROOVE_HEIGHT
     InputBox1.Placement = App.Placement(
-        App.Vector(-(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, MAX_BASE_Y - GROOVE_HEIGHT),
+        App.Vector(
+            -(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, MAX_BASE_Y - GROOVE_HEIGHT
+        ),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    fillet = doc.addObject("Part::Fillet", "Fillet")
+    fillet = doc.addObject('Part::Fillet', 'Fillet')
     fillet.Base = InputBox1
     __fillets__ = []
     __fillets__.append((1, 2.00, 2.00))
@@ -350,26 +357,28 @@ def add_groove(doc, baseholder):
 
     doc.recompute()
 
-    InputBox1a = App.ActiveDocument.addObject("Part::Feature", "InputBox1a")
+    InputBox1a = App.ActiveDocument.addObject('Part::Feature', 'InputBox1a')
     InputBox1a.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))
 
-    doc.removeObject("Fillet")
-    doc.removeObject("InputBox1")
+    doc.removeObject('Fillet')
+    doc.removeObject('InputBox1')
 
     doc.recompute()
 
     INPUT_LENGTH = SEAL_LENGTH + 2.5 + GROOVE_TOLERANCE
     INPUT_WIDTH = SEAL_WIDTH + 2.5 + GROOVE_TOLERANCE
-    InputBox2 = doc.addObject("Part::Box", "InputBox2")
+    InputBox2 = doc.addObject('Part::Box', 'InputBox2')
     InputBox2.Length = INPUT_LENGTH
     InputBox2.Width = INPUT_WIDTH
     InputBox2.Height = GROOVE_HEIGHT
     InputBox2.Placement = App.Placement(
-        App.Vector(-(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, MAX_BASE_Y - GROOVE_HEIGHT),
+        App.Vector(
+            -(INPUT_LENGTH) / 2, -(INPUT_WIDTH) / 2, MAX_BASE_Y - GROOVE_HEIGHT
+        ),
         App.Rotation(App.Vector(0, 0, 1), 0),
     )
 
-    fillet = doc.addObject("Part::Fillet", "Fillet")
+    fillet = doc.addObject('Part::Fillet', 'Fillet')
     fillet.Base = InputBox2
     __fillets__ = []
     __fillets__.append((1, 2.00, 2.00))
@@ -381,41 +390,41 @@ def add_groove(doc, baseholder):
 
     doc.recompute()
 
-    InputBox2a = App.ActiveDocument.addObject("Part::Feature", "InputBox2a")
+    InputBox2a = App.ActiveDocument.addObject('Part::Feature', 'InputBox2a')
     InputBox2a.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))
 
-    doc.removeObject("Fillet")
-    doc.removeObject("InputBox2")
+    doc.removeObject('Fillet')
+    doc.removeObject('InputBox2')
 
-    inputboxcut = doc.addObject("Part::Cut", "inputboxcut")
+    inputboxcut = doc.addObject('Part::Cut', 'inputboxcut')
     inputboxcut.Base = InputBox2a
     inputboxcut.Tool = InputBox1a
     doc.recompute()
 
-    inputbox = doc.addObject("Part::Feature", "inputbox")
-    inputbox.Label = "inputbox"
+    inputbox = doc.addObject('Part::Feature', 'inputbox')
+    inputbox.Label = 'inputbox'
     inputbox.Shape = Part.Solid(Part.Shell(inputboxcut.Shape.Faces))
 
-    doc.removeObject("inputboxcut")
+    doc.removeObject('inputboxcut')
     doc.recompute()
 
-    doc.removeObject("InputBox1a")
-    doc.removeObject("InputBox2a")
+    doc.removeObject('InputBox1a')
+    doc.removeObject('InputBox2a')
 
     # cut out the hole
 
-    basecut = doc.addObject("Part::Cut", "basecut")
+    basecut = doc.addObject('Part::Cut', 'basecut')
     basecut.Base = baseholder
     basecut.Tool = inputbox
     doc.recompute()
 
-    FullBase = doc.addObject("Part::Feature", "FullBase")
+    FullBase = doc.addObject('Part::Feature', 'FullBase')
     FullBase.Shape = Part.Solid(Part.Shell(basecut.Shape.Faces))
     doc.recompute()
 
-    doc.removeObject("basecut")
+    doc.removeObject('basecut')
 
-    doc.removeObject("inputbox")
+    doc.removeObject('inputbox')
     doc.removeObject(baseholder.Name)
     doc.recompute()
     return FullBase
@@ -425,8 +434,7 @@ def add_pcb_cutout(doc, baseholder):
     # width is 88 mm
     # length is 48 mm
     # corners are 4.8 mm
-    CHIP_TOLERANCE = 0.1
-    CutterBox = doc.addObject("Part::Box", "CutterBox")
+    CutterBox = doc.addObject('Part::Box', 'CutterBox')
     CutterBox.Length = CHIP_LENGTH + CHIP_TOLERANCE
     CutterBox.Width = CHIP_WIDTH + CHIP_TOLERANCE
     CutterBox.Height = CAVITY_HEIGHT
@@ -440,7 +448,7 @@ def add_pcb_cutout(doc, baseholder):
     )
 
     # fillet the corners
-    fillet = doc.addObject("Part::Fillet", "Fillet")
+    fillet = doc.addObject('Part::Fillet', 'Fillet')
 
     fillet.Base = CutterBox
     __fillets__ = []
@@ -451,14 +459,14 @@ def add_pcb_cutout(doc, baseholder):
     del __fillets__
 
     doc.recompute()
-    CutterBox2 = App.ActiveDocument.addObject("Part::Feature", "CutterBox2")
+    CutterBox2 = App.ActiveDocument.addObject('Part::Feature', 'CutterBox2')
     CutterBox2.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))
 
     doc.removeObject(fillet.Name)
     doc.removeObject(CutterBox.Name)
     doc.recompute()
 
-    CutCorner = doc.addObject("Part::Cylinder", "CutCorner")
+    CutCorner = doc.addObject('Part::Cylinder', 'CutCorner')
     CutCorner.Height = 100
     CutCorner.Radius = 4.0
 
@@ -471,24 +479,24 @@ def add_pcb_cutout(doc, baseholder):
         App.Rotation(App.Vector(1, 0, 0), 0),
     )
 
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     cut.Base = CutterBox2
     cut.Tool = CutCorner
     doc.recompute()
 
-    CutterBox = doc.addObject("Part::Feature", "CutterBox")
+    CutterBox = doc.addObject('Part::Feature', 'CutterBox')
     CutterBox.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cut.Name)
     doc.removeObject(CutterBox2.Name)
     doc.removeObject(CutCorner.Name)
     doc.recompute()
-    cut = doc.addObject("Part::Cut", "cut")
+    cut = doc.addObject('Part::Cut', 'cut')
     cut.Base = baseholder
     cut.Tool = CutterBox
     doc.recompute()
 
-    newbaseholder = doc.addObject("Part::Feature", "newbaseholder")
+    newbaseholder = doc.addObject('Part::Feature', 'newbaseholder')
     newbaseholder.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cut.Name)
@@ -498,7 +506,7 @@ def add_pcb_cutout(doc, baseholder):
 
 
 def make_screw_holes(doc, baseholder):
-    ScrewCut1 = doc.addObject("Part::Cylinder", "ScrewCut1")
+    ScrewCut1 = doc.addObject('Part::Cylinder', 'ScrewCut1')
     ScrewCut1.Height = 100
     ScrewCut1.Radius = HEX_NUT_DIAM / 2
 
@@ -511,7 +519,7 @@ def make_screw_holes(doc, baseholder):
         App.Rotation(App.Vector(1, 0, 0), SCREW_ANGLE),
     )
 
-    ScrewCut2 = doc.addObject("Part::Cylinder", "ScrewCut2")
+    ScrewCut2 = doc.addObject('Part::Cylinder', 'ScrewCut2')
     ScrewCut2.Height = 100
     ScrewCut2.Radius = HEX_NUT_DIAM / 2
     ScrewCut2.Placement = App.Placement(
@@ -523,7 +531,7 @@ def make_screw_holes(doc, baseholder):
         App.Rotation(App.Vector(1, 0, 0), SCREW_ANGLE),
     )
 
-    ScrewCut3 = doc.addObject("Part::Cylinder", "ScrewCut3")
+    ScrewCut3 = doc.addObject('Part::Cylinder', 'ScrewCut3')
     ScrewCut3.Height = 100
     ScrewCut3.Radius = HEX_NUT_DIAM / 2
     ScrewCut3.Placement = App.Placement(
@@ -535,7 +543,7 @@ def make_screw_holes(doc, baseholder):
         App.Rotation(App.Vector(1, 0, 0), -SCREW_ANGLE),
     )
 
-    ScrewCut4 = doc.addObject("Part::Cylinder", "ScrewCut4")
+    ScrewCut4 = doc.addObject('Part::Cylinder', 'ScrewCut4')
     ScrewCut4.Height = 100
     ScrewCut4.Radius = HEX_NUT_DIAM / 2
     ScrewCut4.Placement = App.Placement(
@@ -547,45 +555,45 @@ def make_screw_holes(doc, baseholder):
         App.Rotation(App.Vector(1, 0, 0), -SCREW_ANGLE),
     )
 
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     cut.Base = baseholder
     cut.Tool = ScrewCut1
     doc.recompute()
-    baseplate2pre0 = doc.addObject("Part::Feature", "baseplate2pre0")
-    baseplate2pre0.Label = "baseplate2pre0"
+    baseplate2pre0 = doc.addObject('Part::Feature', 'baseplate2pre0')
+    baseplate2pre0.Label = 'baseplate2pre0'
     baseplate2pre0.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cut.Label)
     doc.removeObject(baseholder.Label)
 
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     cut.Base = baseplate2pre0
     cut.Tool = ScrewCut2
     doc.recompute()
 
-    baseplate2pre1 = doc.addObject("Part::Feature", "baseplate2pre1")
+    baseplate2pre1 = doc.addObject('Part::Feature', 'baseplate2pre1')
     baseplate2pre1.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cut.Label)
     doc.removeObject(baseplate2pre0.Label)
 
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     cut.Base = baseplate2pre1
     cut.Tool = ScrewCut3
     doc.recompute()
 
-    baseplate2pre2 = doc.addObject("Part::Feature", "baseplate2pre2")
+    baseplate2pre2 = doc.addObject('Part::Feature', 'baseplate2pre2')
     baseplate2pre2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cut.Label)
     doc.removeObject(baseplate2pre1.Label)
 
-    cut = doc.addObject("Part::Cut", "Cut")
+    cut = doc.addObject('Part::Cut', 'Cut')
     cut.Base = baseplate2pre2
     cut.Tool = ScrewCut4
     doc.recompute()
 
-    baseplate2 = doc.addObject("Part::Feature", "baseplate2")
+    baseplate2 = doc.addObject('Part::Feature', 'baseplate2')
     baseplate2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
     doc.removeObject(cut.Label)
@@ -600,7 +608,7 @@ def make_screw_holes(doc, baseholder):
 
 
 def fillet_edges(doc, baseplate):
-    fillet = doc.addObject("Part::Fillet", "Fillet")
+    fillet = doc.addObject('Part::Fillet', 'Fillet')
     fillet.Base = baseplate
 
     __fillets__ = []
@@ -624,8 +632,8 @@ def fillet_edges(doc, baseplate):
 
     doc.recompute()
 
-    baseplate2 = App.ActiveDocument.addObject("Part::Feature", "baseplate2")
-    baseplate2.Label = "baseplate2"
+    baseplate2 = App.ActiveDocument.addObject('Part::Feature', 'baseplate2')
+    baseplate2.Label = 'baseplate2'
     baseplate2.Shape = Part.Solid(Part.Shell(fillet.Shape.Faces))
 
     doc.removeObject(fillet.Name)
@@ -636,11 +644,77 @@ def fillet_edges(doc, baseplate):
     return baseplate2
 
 
+def add_gripper(doc, baseplate):
+    # next retain only the section of the cylinder that is needed to mount the device
+    GRIPPER_TOLERANCE = 0.2
+    ymax = MAX_BASE_Y
+    ymin = MAX_BASE_Y - CAVITY_HEIGHT + PCB_HEIGHT + GRIPPER_TOLERANCE
+
+    width = 2
+    length = 1
+    protrusion = 0.5
+
+    gripper1 = doc.addObject('Part::Wedge', 'gripper1')
+
+    gripper1.Xmin = -width / 2
+    gripper1.X2min = -width / 2
+    gripper1.Xmax = width / 2
+    gripper1.X2max = width / 2
+
+    gripper1.Zmin = -length
+    gripper1.Z2min = -length
+    gripper1.Zmax = protrusion
+    gripper1.Z2max = 0
+
+    gripper1.Ymin, gripper1.Ymax = ymin, ymax
+
+    gripper1.Placement = App.Placement(
+        App.Vector(
+            -CHIP_LENGTH / 2 + 10, CHIP_WIDTH / 2 + CHIP_TOLERANCE / 2, 0
+        ),
+        App.Rotation(App.Vector(1, 0, 0), 90),
+    )
+
+    gripper2 = doc.addObject('Part::Wedge', 'gripper2')
+
+    gripper2.Xmin = -width / 2
+    gripper2.X2min = -width / 2
+    gripper2.Xmax = width / 2
+    gripper2.X2max = width / 2
+
+    gripper2.Zmax = length
+    gripper2.Z2max = length
+    gripper2.Zmin = -protrusion
+    gripper2.Z2min = 0
+
+    gripper2.Ymin, gripper2.Ymax = ymin, ymax
+
+    gripper2.Placement = App.Placement(
+        App.Vector(-1, -CHIP_WIDTH / 2 - CHIP_TOLERANCE / 2, 0),
+        App.Rotation(App.Vector(1, 0, 0), 90),
+    )
+
+    fusion = doc.addObject('Part::MultiFuse', 'Fusion')
+    doc.Fusion.Shapes = [baseplate, gripper1, gripper2]
+    doc.recompute()
+
+    baseplate2 = doc.addObject('Part::Feature', 'baseplate2')
+    baseplate2.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
+
+    doc.removeObject('Fusion')
+    doc.removeObject(baseplate.Name)
+    doc.removeObject('gripper1')
+    doc.removeObject('gripper2')
+
+    return baseplate2
+
+
 def build_base_case(doc):
     curvedbase = create_curved_base(doc)
     baseholder = pcb_platform(doc, curvedbase)
     baseholder = add_surface(doc, baseholder)
     baseholder = add_groove(doc, baseholder)
     baseholder = add_pcb_cutout(doc, baseholder)
+    baseholder = add_gripper(doc, baseholder)
     baseholder = make_screw_holes(doc, baseholder)
     baseholder = fillet_edges(doc, baseholder)
