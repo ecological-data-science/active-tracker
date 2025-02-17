@@ -1014,4 +1014,4 @@ def build_top_case(doc):
     mainlid = seal_protrusion(doc, mainlid)
     mainlid = solar_panel_wire(doc, mainlid)
     mainlid = add_screw_holes(doc, mainlid)
-    # mainlid = add_gripper(doc, mainlid)
+    mainlid = add_gripper(doc, mainlid)

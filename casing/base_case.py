@@ -715,6 +715,6 @@ def build_base_case(doc):
     baseholder = add_surface(doc, baseholder)
     baseholder = add_groove(doc, baseholder)
     baseholder = add_pcb_cutout(doc, baseholder)
-    baseholder = add_gripper(doc, baseholder)
+    # baseholder = add_gripper(doc, baseholder)
     baseholder = make_screw_holes(doc, baseholder)
     baseholder = fillet_edges(doc, baseholder)
