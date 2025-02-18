@@ -650,30 +650,9 @@ def add_gripper(doc, baseplate):
     ymax = MAX_BASE_Y
     ymin = MAX_BASE_Y - CAVITY_HEIGHT + PCB_HEIGHT + GRIPPER_TOLERANCE
 
-    width = 2
-    length = 1
-    protrusion = 0.5
-
-    gripper1 = doc.addObject('Part::Wedge', 'gripper1')
-
-    gripper1.Xmin = -width / 2
-    gripper1.X2min = -width / 2
-    gripper1.Xmax = width / 2
-    gripper1.X2max = width / 2
-
-    gripper1.Zmin = -length
-    gripper1.Z2min = -length
-    gripper1.Zmax = protrusion
-    gripper1.Z2max = 0
-
-    gripper1.Ymin, gripper1.Ymax = ymin, ymax
-
-    gripper1.Placement = App.Placement(
-        App.Vector(
-            -CHIP_LENGTH / 2 + 10, CHIP_WIDTH / 2 + CHIP_TOLERANCE / 2, 0
-        ),
-        App.Rotation(App.Vector(1, 0, 0), 90),
-    )
+    width = 10
+    length = 2
+    protrusion = 1.0
 
     gripper2 = doc.addObject('Part::Wedge', 'gripper2')
 
@@ -682,29 +661,35 @@ def add_gripper(doc, baseplate):
     gripper2.Xmax = width / 2
     gripper2.X2max = width / 2
 
-    gripper2.Zmax = length
-    gripper2.Z2max = length
-    gripper2.Zmin = -protrusion
-    gripper2.Z2min = 0
+    gripper2.Zmax = length / 2
+    gripper2.Z2max = length / 2
+    gripper2.Zmin = -length / 2
+    gripper2.Z2min = -length / 2
 
     gripper2.Ymin, gripper2.Ymax = ymin, ymax
 
     gripper2.Placement = App.Placement(
-        App.Vector(-1, -CHIP_WIDTH / 2 - CHIP_TOLERANCE / 2, 0),
+        App.Vector(
+            -CHIP_LENGTH / 2 - CHIP_TOLERANCE / 2 + 13,
+            -CHIP_WIDTH / 2 - CHIP_TOLERANCE / 2,
+            0,
+        ),
         App.Rotation(App.Vector(1, 0, 0), 90),
     )
 
-    fusion = doc.addObject('Part::MultiFuse', 'Fusion')
-    doc.Fusion.Shapes = [baseplate, gripper1, gripper2]
+    cut = doc.addObject('Part::Cut', 'cut')
+    cut.Base = baseplate
+    cut.Tool = gripper2
+
     doc.recompute()
 
     baseplate2 = doc.addObject('Part::Feature', 'baseplate2')
-    baseplate2.Shape = Part.Solid(Part.Shell(fusion.Shape.Faces))
+    baseplate2.Shape = Part.Solid(Part.Shell(cut.Shape.Faces))
 
-    doc.removeObject('Fusion')
-    doc.removeObject(baseplate.Name)
-    doc.removeObject('gripper1')
+    doc.removeObject('cut')
     doc.removeObject('gripper2')
+
+    doc.removeObject(baseplate.Name)
 
     return baseplate2
 
@@ -715,6 +700,6 @@ def build_base_case(doc):
     baseholder = add_surface(doc, baseholder)
     baseholder = add_groove(doc, baseholder)
     baseholder = add_pcb_cutout(doc, baseholder)
-    # baseholder = add_gripper(doc, baseholder)
+    baseholder = add_gripper(doc, baseholder)
     baseholder = make_screw_holes(doc, baseholder)
     baseholder = fillet_edges(doc, baseholder)
