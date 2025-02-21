@@ -854,7 +854,7 @@ def add_screw_holes(doc, mainlid):
 
 def add_gripper(doc, mainlid):
     GRIPPER_WIDTH = 2
-    GRIPPER_HEIGHT = 18
+    GRIPPER_HEIGHT = 18 + 2.0
     gripperbox1 = doc.addObject('Part::Box', 'gripperbox1')
     gripperbox1.Length = 10
     gripperbox1.Width = GRIPPER_WIDTH
@@ -914,7 +914,7 @@ def add_gripper(doc, mainlid):
     doc.removeObject(gripperbox1b.Name)
 
     GRIPPER_WIDTH = 2
-    GRIPPER_HEIGHT = 18
+    GRIPPER_HEIGHT = 22
     gripperbox2 = doc.addObject('Part::Box', 'gripperbox2')
     gripperbox2.Length = 3
     gripperbox2.Width = GRIPPER_WIDTH
@@ -945,8 +945,8 @@ def add_gripper(doc, mainlid):
         App.Rotation(App.Vector(1, 0, 0), 0),
     )
 
-    GRIPPER_WIDTH = 3
-    GRIPPER_HEIGHT = 5.0
+    GRIPPER_WIDTH = 2.2
+    GRIPPER_HEIGHT = 7.2
     gripperbox2b = doc.addObject('Part::Box', 'gripperbox2b')
     gripperbox2b.Length = 3
     gripperbox2b.Width = GRIPPER_WIDTH
@@ -955,7 +955,7 @@ def add_gripper(doc, mainlid):
     gripperbox2b.Placement = App.Placement(
         App.Vector(
             0,
-            -CHIP_WIDTH / 2 - 1,
+            -CHIP_WIDTH / 2 - 0.2,
             MAX_BASE_Y + 8,
         ),
         App.Rotation(App.Vector(1, 0, 0), 0),

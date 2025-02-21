@@ -5,8 +5,9 @@ import BOPTools.JoinFeatures
 import Part
 import Part,PartGui
 import Mesh
-import sys
+import sys,os
 
+sys.path.append('/Users/colin.torney/workspace/active-tracker/casing')
 
 from base_case import build_base_case
 from top_case import build_top_case
