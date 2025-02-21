@@ -854,7 +854,7 @@ def add_screw_holes(doc, mainlid):
 
 def add_gripper(doc, mainlid):
     GRIPPER_WIDTH = 2
-    GRIPPER_HEIGHT = 18 + 2.0
+    GRIPPER_HEIGHT = 19.3
     gripperbox1 = doc.addObject('Part::Box', 'gripperbox1')
     gripperbox1.Length = 10
     gripperbox1.Width = GRIPPER_WIDTH
@@ -914,7 +914,7 @@ def add_gripper(doc, mainlid):
     doc.removeObject(gripperbox1b.Name)
 
     GRIPPER_WIDTH = 2
-    GRIPPER_HEIGHT = 22
+    GRIPPER_HEIGHT = 20.5
     gripperbox2 = doc.addObject('Part::Box', 'gripperbox2')
     gripperbox2.Length = 3
     gripperbox2.Width = GRIPPER_WIDTH
@@ -946,7 +946,7 @@ def add_gripper(doc, mainlid):
     )
 
     GRIPPER_WIDTH = 2.2
-    GRIPPER_HEIGHT = 7.2
+    GRIPPER_HEIGHT = 6.2
     gripperbox2b = doc.addObject('Part::Box', 'gripperbox2b')
     gripperbox2b.Length = 3
     gripperbox2b.Width = GRIPPER_WIDTH
