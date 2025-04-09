@@ -1,60 +1,68 @@
 #include "storage.h"
 
-void Storage::begin() {
+bool Storage::begin() {
 
   // Initialize LittleFS
   if (!LittleFS.begin()) {
     Serial.println("Failed to mount LittleFS");
-    return;
+    return false;
   }
   if (!LittleFS.exists(devNonce)) {
     File file = LittleFS.open(devNonce, "w");
     if (!file) {
       Serial.println("Failed to open file for writing");
-      return;
+      return false;
     }
-    file.write(0);
+    uint8_t dev_nonce = 0;
+    file.write(dev_nonce);
     file.close();
   }
   if (!LittleFS.exists(sendCounter)) {
     File file = LittleFS.open(sendCounter, "w");
     if (!file) {
       Serial.println("Failed to open file for writing");
-      return;
+      return false;
     }
-    file.write(0);
+
+    uint8_t send_counter = 0;
+    file.write(send_counter);
     file.close();
   } else {
     File file = LittleFS.open(sendCounter, "r");
     if (!file) {
       Serial.println("Failed to open file for reading");
-      return;
+      return false;
     }
-    send_counter = file.read();
+    last_record_sent = file.read();
     file.close();
     Serial.print("Send counter: ");
-    Serial.println(send_counter);
+    Serial.println(last_record_sent);
   }
   delay(500);
+  return true;
 }
 
 void Storage::sleep() { delay(500); }
 
-void Storage::write_next_message(location_reading location) {
+void Storage::set_latest_message(location_reading location) {
 
+  memcpy(message_buffer, &location, size_of_location);
+  pending_archive = true;
+}
+
+void Storage::store_latest_message() {
+
+  // if we enter this function we have not successfully sent the message
+  // and it is still stored in the message_buffer
   File file = LittleFS.open(dataFile, "a");
   if (!file) {
     Serial.println("file open failed");
     return;
   }
 
-  uint8_t record_buffer[record_size];
-
-  memcpy(record_buffer, &location, size_of_location);
-  // memcpy(&record_buffer[size_of_location], &activity, size_of_activity);
-
-  file.write(record_buffer, record_size);
+  file.write(message_buffer, record_size);
   file.close();
+  pending_archive = false;
 }
 
 bool Storage::anything_to_send() {
@@ -78,12 +86,16 @@ bool Storage::anything_to_send() {
 
 void Storage::send_successful() {
 
-  send_counter++;
+  if (pending_archive) {
+    pending_archive = false;
+    return;
+  }
+  last_record_sent++;
   File file = LittleFS.open(sendCounter, "w");
   if (!file) {
     Serial.println("Failed to open file for writing");
     return;
   }
-  file.write(send_counter);
+  file.write(last_record_sent);
   file.close();
 }

@@ -2,11 +2,10 @@
 
 #include "lora.h"
 
-
 bool Lora::begin() {
 
   // pinMode(LORA_IRQ_DUMB, OUTPUT);
-  // activate(); 
+  // activate();
   //
   // sendQuery("AT+VER?");
   // sendQuery("AT+DEVEUI?");
@@ -23,116 +22,107 @@ bool Lora::begin() {
   // sendCommand("AT+DUTYCYCLE=0");
   //
   //
-  // sendQuery("AT+RTYNUM?");  
-  // sendQuery("AT+DELAY?");  
+  // sendQuery("AT+RTYNUM?");
+  // sendQuery("AT+DELAY?");
   //
-  // join(); 
-  
-  
+  // join();
+
   return true;
 }
 
+bool Lora::update(Storage *storage) {
 
+  // attempts to send a message and returns false if the lora comms
+  // should be stopped. If true it will keep trying to send messages
+  // Reasons to return true:
+  // 1. we have sent a message and there's messages in the history
+  // 2. we have not sent a message but we have successfully sent one this
+  // session
+  // 3. we have not sent a message because we are not joined
 
-// bool Lora::update(Storage* storage) {
-//
-//
-//
-//
-//   deactivate();
-//   storage->begin();
-//   Serial.println("checking if send needed");
-//   bool send_needed = storage->anything_to_send();
-//   storage->sleep();  
-//
-//   if (!send_needed)
-//     return false;
-//
-//
-//   Serial.println("send needed");
-//
-//   activate();
-//
-//
-//   if (!join_success)
-//   {
-//     join_success = join();
-//     if (!join_success)
-//       return false;
-//   }
-//
-//
-//   uint8_t* message_buffer = storage->message_buffer;
-//
-//
-//   bool activity_sent = false;
-//
-//   if (!location_sent)
-//   {
-//     LoraMessage l_message;
-//
-//     long location_time;
-//     float location_data[2];
-//
-//     memcpy((uint8_t *)&location_time, message_buffer, sizeof(location_time)); 
-//     memcpy((uint8_t *)&location_data, &message_buffer[4], sizeof(location_data)); 
-//
-//
-//     l_message.addUnixtime(location_time);
-//     l_message.addLatLng(location_data[0],location_data[1]);
-//
-//
-//     location_sent = send_message(l_message);
-//
-//   }
-//   if (location_sent)
-//   {
-//     Serial.println("sending location message");
-//
-//     LoraMessage a_message;
-//
-//     long start_time;
-//     byte activities[45];
-//
-//     memcpy((uint8_t *)&start_time, &message_buffer[12], sizeof(start_time)); 
-//     memcpy((uint8_t *)&activities, &message_buffer[16], sizeof(activities)); 
-//
-//     a_message.addUnixtime(start_time);
-//     for (int i=0;i<45;i++)
-//       a_message.addUint8(activities[i]);
-//
-//     activity_sent = send_message(a_message);
-//   }
-//
-//   if (activity_sent)
-//   {
-//
-//     Serial.println("sending activity message");
-//
-//     deactivate();
-//     location_sent=false;
-//     storage->begin();
-//     storage->send_successful();
-//     session_success = true;
-//     storage->sleep();
-//     activate();
-//   }
-//
-//   return ( activity_sent || session_success );
-//
-// }
+  activate();
+  //
+  //
+  if (!join_success) {
+    join_success = join();
+    if (!join_success)
+      return false;
+  }
+  //
+  //
+  uint8_t *message_buffer = storage->message_buffer;
+  //
+  //
+  //   bool activity_sent = false;
+  //
+  //   if (!location_sent)
+  //   {
+  LoraMessage l_message;
+  //
+  //
+  //     sizeof(location_data));
+  //
+  //
 
+  long location_time;
+  float location_data[2];
 
+  memcpy((uint8_t *)&location_time, message_buffer, sizeof(location_time));
+  memcpy((uint8_t *)&location_data, &message_buffer[4], sizeof(location_data));
 
-bool Lora::join(){
+  l_message.addUnixtime(location_time);
+  l_message.addLatLng(location_data[0], location_data[1]);
+  //
+  //
+  location_sent = send_message(l_message);
+
+  if (!join_success) {
+    Serial.println("Not actually joined");
+    // if we get here then we thought we were joined but we are not
+    // we return turn to keep lora active and in the next iteration
+    // we will try to join again
+    return true;
+  }
+  //
+  //   }
+  //   if (location_sent)
+  //   {
+  //     Serial.println("sending location message");
+  //
+  //     LoraMessage a_message;
+  //
+  //     long start_time;
+  //     byte activities[45];
+  //
+  //     memcpy((uint8_t *)&start_time, &message_buffer[12],
+  //     sizeof(start_time)); memcpy((uint8_t *)&activities,
+  //     &message_buffer[16], sizeof(activities));
+  //
+  //     a_message.addUnixtime(start_time);
+  //     for (int i=0;i<45;i++)
+  //       a_message.addUint8(activities[i]);
+  //
+  //     activity_sent = send_message(a_message);
+  //   }
+  //
+  if (location_sent) {
+    storage->send_successful();
+    session_success = true;
+  }
+  bool send_needed = storage->anything_to_send();
+
+  return (location_sent || session_success) && send_needed;
+}
+
+bool Lora::join() {
 
   bool joined = false;
-  
+
   Serial.println("attempting to join..");
 
   // int modem_status = sendCommand("AT+JOIN");
   // if (modem_status==MODEM_OK) // join request sent
-  // {  
+  // {
   //
   //   long lora_start_time = millis();
   //   long lora_timeout = 60*1000*5;  // break after 5 minutes
@@ -160,12 +150,12 @@ bool Lora::join(){
   // if (modem_status==ERR_ALREADY_JOINED) // already joined
   //   joined = true;
   //
-  
+
+  joined = true;
   return joined;
 }
 
-
-bool Lora::send_message(LoraMessage message){
+bool Lora::send_message(LoraMessage message) {
 
   // Serial.println("sending message");
   //
@@ -176,15 +166,15 @@ bool Lora::send_message(LoraMessage message){
   // // activity messages are length 49 and go to port 5
   // if (message.getLength()==12)
   // {
-  //   SerialLoRa.print("AT+PCTX 3,"); 
+  //   SerialLoRa.print("AT+PCTX 3,");
   // }
   // else
   // {
   //   SerialLoRa.print("AT+PCTX 5,");
   // }
   // SerialLoRa.print(message.getLength());
-  // SerialLoRa.print("\r"); 
-  // SerialLoRa.write(message.getBytes(),message.getLength()); 
+  // SerialLoRa.print("\r");
+  // SerialLoRa.write(message.getBytes(),message.getLength());
   //
   // int modem_status = 0;
   //
@@ -233,72 +223,69 @@ bool Lora::send_message(LoraMessage message){
   // if (modem_status==ERR_NOT_JOINED) // not joined
   //   join_success = false;
 
-
+  message_sent = true;
   return message_sent;
-  
 }
 
 void Lora::activate() {
 
-//   if (lora_active==true)
-//     return;
-//   SerialLoRa.begin(19200); 
-//   long lora_start_time = millis();
-//   long lora_timeout = 10000;
-//   while(!SerialLoRa){
-//     if (millis() - lora_start_time > lora_timeout)
-//       return;
-//   }
-//
-//   digitalWrite(LORA_IRQ_DUMB, LOW);
-//   lora_active=true;
-//   delay(500);
-//   return;
-// }
-//
-// void Lora::deactivate() {
-//
-//   if (lora_active==false)
-//     return;
-//
-//   digitalWrite(LORA_IRQ_DUMB, HIGH);
-//
-//   delay(500);
-//   sendCommand("AT$DETACH"); // request UART to disconnect
-//
-//   lora_active=false;
-//   delay(500);
-//
-//   return;
-// }
-//
-// void Lora::sendQuery(String atstring)
-// {
-//
-//   Serial.print("Sending query: ");
-//   Serial.println(atstring);
-//
-//   SerialLoRa.println(atstring);
-//   String answer;
-//   while (true)
-//   {
-//
-//     answer = SerialLoRa.readStringUntil('\r\n');
-//     if (answer.startsWith("+OK")){
-//       break;
-//     }
-//     if (answer.startsWith("+ERR")){
-//       break;
-//     }
-//   }
-//   Serial.print("Response: ");
-//   Serial.println(answer);
-//   delay(500);
- 
+  //   if (lora_active==true)
+  //     return;
+  //   SerialLoRa.begin(19200);
+  //   long lora_start_time = millis();
+  //   long lora_timeout = 10000;
+  //   while(!SerialLoRa){
+  //     if (millis() - lora_start_time > lora_timeout)
+  //       return;
+  //   }
+  //
+  //   digitalWrite(LORA_IRQ_DUMB, LOW);
+  //   lora_active=true;
+  //   delay(500);
+  //   return;
+  // }
+  //
+  // void Lora::deactivate() {
+  //
+  //   if (lora_active==false)
+  //     return;
+  //
+  //   digitalWrite(LORA_IRQ_DUMB, HIGH);
+  //
+  //   delay(500);
+  //   sendCommand("AT$DETACH"); // request UART to disconnect
+  //
+  //   lora_active=false;
+  //   delay(500);
+  //
+  //   return;
+  // }
+  //
+  // void Lora::sendQuery(String atstring)
+  // {
+  //
+  //   Serial.print("Sending query: ");
+  //   Serial.println(atstring);
+  //
+  //   SerialLoRa.println(atstring);
+  //   String answer;
+  //   while (true)
+  //   {
+  //
+  //     answer = SerialLoRa.readStringUntil('\r\n');
+  //     if (answer.startsWith("+OK")){
+  //       break;
+  //     }
+  //     if (answer.startsWith("+ERR")){
+  //       break;
+  //     }
+  //   }
+  //   Serial.print("Response: ");
+  //   Serial.println(answer);
+  //   delay(500);
 }
 
-int Lora::sendCommand(String atstring)
-{
+int Lora::sendCommand(String atstring) {
   int modem_status = 0;
 
   // Serial.print("Sending command: ");

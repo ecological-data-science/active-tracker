@@ -10,6 +10,8 @@ SFE_UBLOX_GNSS gps;
 
 #include "gps_deploy.h"
 #include "lora.h"
+#include "storage.h"
+
 #include "pico/stdlib.h"
 // #include "pico/sleep.h"
 
@@ -24,14 +26,15 @@ SFE_UBLOX_GNSS gps;
 #define WAKEUP_PIN 7
 
 Lora lora;
+Storage storage;
 
 bool GPS_ACTIVE = false;
 bool LORA_ACTIVE = false;
 
-unsigned long gps_run_time =
-    1000 * 60 * 10; // gps will run for up to 10 minutes to get a fix
-unsigned long lora_run_time =
-    1000 * 60 * 20; // lora will broadcast for up to 20 minutes every hour
+// gps will run for up to 10 minutes to get a fix
+unsigned long gps_run_time = 1000 * 60 * 10;
+// lora will broadcast for up to 40 minutes every hour
+unsigned long lora_run_time = 1000 * 60 * 40;
 
 unsigned long gps_check_interval = 60 * 1000; // check the gps fix every minute
 unsigned long gps_last_check_time = 0;
@@ -49,6 +52,7 @@ void wake_gps() {
   digitalWrite(WAKEUP_PIN, HIGH);
   delay(1000);
   digitalWrite(WAKEUP_PIN, LOW);
+  gps_last_check_time = millis();
 }
 
 void wake_gps_old() {
@@ -102,37 +106,38 @@ void setup_old() {
 }
 void setup() {
 
-  if (!lora.begin()) {
-    Serial.println("ERROR: lora");
-  }
-
-  delay(500);
-  pinMode(WAKEUP_PIN, OUTPUT);
-  digitalWrite(WAKEUP_PIN, LOW);
-
   Wire.begin();
   Serial.begin(115200);
-  // while (!Serial); //Wait for user to open terminal
-  delay(5000);
-  Serial.println("SparkFun u-blox Example");
 
   pinMode(PIN_LED_R, OUTPUT);
   pinMode(PIN_LED_G, OUTPUT);
   pinMode(PIN_LED_B, OUTPUT);
   digitalWrite(PIN_LED_R, HIGH); // turn the LED on (HIGH is the voltage level)
+  delay(10000);
   digitalWrite(PIN_LED_G, HIGH); // turn the LED on (HIGH is the voltage level)
   digitalWrite(PIN_LED_B, HIGH); // turn the LED on (HIGH is the voltage level)
 
-  // gps.enableDebugging(); // Enable debug messages
+  pinMode(WAKEUP_PIN, OUTPUT);
+  digitalWrite(WAKEUP_PIN, LOW);
 
-  if (gps.begin() == false) // Connect to the u-blox module using Wire port
-  {
-    Serial.println(F("u-blox GNSS not detected at default I2C address. Please "
-                     "check wiring. Freezing."));
-    while (1)
-      ;
+  if (!lora.begin()) {
+    Serial.println("ERROR: lora");
+    digitalWrite(PIN_LED_G, LOW);
+    digitalWrite(PIN_LED_B, LOW);
   }
-  Serial.println(F("u-blox GNSS detected at default I2C address"));
+
+  if (!storage.begin()) {
+    Serial.println("ERROR: storage");
+    digitalWrite(PIN_LED_G, LOW);
+    digitalWrite(PIN_LED_B, LOW);
+  }
+
+  if (!gps.begin()) {
+    Serial.println(F("ERROR: gps"));
+    digitalWrite(PIN_LED_G, LOW);
+    digitalWrite(PIN_LED_B, LOW);
+  }
+
   delay(5000);
 
   for (int i = 0; i < 10; i++) {
@@ -190,52 +195,59 @@ void loop() {
   }
 
   if (GPS_ACTIVE) {
-    // Do nothing
-    digitalWrite(LED_BUILTIN,
-                 HIGH); // turn the LED on (HIGH is the voltage level)
-    if (gps.getPVT() == true) {
-      int32_t latitude = gps.getLatitude();
-      Serial.print(F("Lat: "));
-      Serial.print(latitude);
+    if ((millis() - gps_last_check_time) >= gps_check_interval) {
+      if (gps.getPVT() == true) {
+        float latitude = gps.getLatitude();
+        latitude = latitude / 10000000;
 
-      int32_t longitude = gps.getLongitude();
-      Serial.print(F(" Long: "));
-      Serial.print(longitude);
-      Serial.print(F(" (degrees * 10^-7) Datetime:"));
+        float longitude = gps.getLongitude();
+        longitude = longitude / 10000000;
 
-      Serial.print(gps.getYear());
-      Serial.print(F("-"));
-      Serial.print(gps.getMonth());
-      Serial.print(F("-"));
-      Serial.print(gps.getDay());
-      Serial.print(F(" "));
-      Serial.print(gps.getHour());
-      Serial.print(F(":"));
-      Serial.print(gps.getMinute());
-      Serial.print(F(":"));
-      Serial.print(gps.getSecond());
+        Serial.print(F("Lat: "));
+        Serial.print(latitude);
+        Serial.print(F(" Long: "));
+        Serial.print(longitude);
+        Serial.print(F(" (degrees * 10^-7) Datetime:"));
 
-      bool fixOk = gps.getGnssFixOk();
-      Serial.print(F(" Fix ok: "));
-      Serial.print(fixOk);
-      Serial.println();
+        Serial.print(gps.getYear());
+        Serial.print(F("-"));
+        Serial.print(gps.getMonth());
+        Serial.print(F("-"));
+        Serial.print(gps.getDay());
+        Serial.print(F(" "));
+        Serial.print(gps.getHour());
+        Serial.print(F(":"));
+        Serial.print(gps.getMinute());
+        Serial.print(F(":"));
+        Serial.print(gps.getSecond());
 
-      uint8_t pdop = gps.getPDOP();
+        bool fixOk = gps.getGnssFixOk();
+        Serial.print(F(" Fix ok: "));
+        Serial.print(fixOk);
+        Serial.println();
 
-      Serial.print(F(" PDOP: "));
-      Serial.print(pdop);
-      Serial.println();
+        uint8_t pdop = gps.getPDOP();
 
-      if (gps.getTimeFullyResolved() && gps.getTimeValid()) {
-        Serial.println(F("Time is valid and fully resolved"));
+        Serial.print(F(" PDOP: "));
+        Serial.print(pdop);
+        Serial.println();
+
+        if (gps.getTimeFullyResolved() && gps.getTimeValid()) {
+          Serial.println(F("Time is valid and fully resolved"));
+        }
+        latest_location.lat = latitude;
+        latest_location.lon = longitude;
+        latest_location.start_time = gps.getUnixEpoch();
       }
+      gps_last_check_time = millis();
     }
-    digitalWrite(LED_BUILTIN,
-                 LOW); // turn the LED off by making the voltage LOW
 
+    if (millis() - start_time >= gps_run_time) {
+      gps.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
+      GPS_ACTIVE = false;
+    }
     Serial.println(F("Going to sleep for 1 minute"));
     // sleep for 1 minute
-    gps.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
     delay(1000 * 60);
 
     // wake the gps
@@ -281,13 +293,12 @@ void loop() {
     //       }
   }
 
-  if (!LORA_ACTIVE) {
+  if ((!LORA_ACTIVE) && (!GPS_ACTIVE)) {
     // add the readings to storage
-    Serial.println("writing to storage...");
     // storage.begin();
+    storage.set_latest_message(latest_location);
     // storage.write_next_message(latest_location, classifier.latest_activity);
     // storage.sleep();
-    Serial.println("write complete.");
 
     // turn on lora
     LORA_ACTIVE = true;
@@ -295,7 +306,7 @@ void loop() {
   }
 
   if (LORA_ACTIVE) {
-    // LORA_ACTIVE = lora.update(&storage);
+    LORA_ACTIVE = lora.update(&storage);
     if (millis() - lora_start_time >= lora_run_time)
       LORA_ACTIVE = false;
   }
@@ -303,6 +314,10 @@ void loop() {
   // wdt.clear();
 
   if ((!GPS_ACTIVE) && (!LORA_ACTIVE)) {
+
+    if (storage.pending_archive) {
+      storage.store_latest_message();
+    }
 
     // wdt.setup(WDT_OFF);  //watchdog
     unsigned long run_time = millis() - start_time;
