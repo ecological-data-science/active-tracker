@@ -7,6 +7,16 @@ bool Storage::begin() {
     Serial.println("Failed to mount LittleFS");
     return false;
   }
+
+  if (!LittleFS.exists(dataFile)) {
+    File file = LittleFS.open(dataFile, "w");
+    if (!file) {
+      Serial.println("Failed to open file for writing");
+      return false;
+    }
+    file.close();
+  }
+
   if (!LittleFS.exists(devNonce)) {
     File file = LittleFS.open(devNonce, "w");
     if (!file) {
@@ -17,6 +27,7 @@ bool Storage::begin() {
     file.write(dev_nonce);
     file.close();
   }
+
   if (!LittleFS.exists(sendCounter)) {
     File file = LittleFS.open(sendCounter, "w");
     if (!file) {
@@ -33,7 +44,7 @@ bool Storage::begin() {
       Serial.println("Failed to open file for reading");
       return false;
     }
-    last_record_sent = file.read();
+    file.read(&last_record_sent, sizeof(last_record_sent));
     file.close();
     Serial.print("Send counter: ");
     Serial.println(last_record_sent);
@@ -96,6 +107,6 @@ void Storage::send_successful() {
     Serial.println("Failed to open file for writing");
     return;
   }
-  file.write(last_record_sent);
+  file.write(&last_record_sent, sizeof(last_record_sent));
   file.close();
 }

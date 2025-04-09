@@ -157,7 +157,7 @@ bool Lora::join() {
 
 bool Lora::send_message(LoraMessage message) {
 
-  // Serial.println("sending message");
+  Serial.println("sending message");
   //
   // Serial.println(message.getLength());
   bool message_sent = false;

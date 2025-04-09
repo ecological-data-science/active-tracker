@@ -32,11 +32,11 @@ bool GPS_ACTIVE = false;
 bool LORA_ACTIVE = false;
 
 // gps will run for up to 10 minutes to get a fix
-unsigned long gps_run_time = 1000 * 60 * 10;
+unsigned long gps_run_time = 1000 * 60 * 1; // 0;
 // lora will broadcast for up to 40 minutes every hour
 unsigned long lora_run_time = 1000 * 60 * 40;
 
-unsigned long gps_check_interval = 60 * 1000; // check the gps fix every minute
+unsigned long gps_check_interval = 10 * 1000; // check the gps fix every minute
 unsigned long gps_last_check_time = 0;
 
 unsigned long start_time = 0;
@@ -112,49 +112,49 @@ void setup() {
   pinMode(PIN_LED_R, OUTPUT);
   pinMode(PIN_LED_G, OUTPUT);
   pinMode(PIN_LED_B, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
   digitalWrite(PIN_LED_R, HIGH); // turn the LED on (HIGH is the voltage level)
-  delay(10000);
   digitalWrite(PIN_LED_G, HIGH); // turn the LED on (HIGH is the voltage level)
   digitalWrite(PIN_LED_B, HIGH); // turn the LED on (HIGH is the voltage level)
 
+  delay(10000);
   pinMode(WAKEUP_PIN, OUTPUT);
   digitalWrite(WAKEUP_PIN, LOW);
 
   if (!lora.begin()) {
     Serial.println("ERROR: lora");
-    digitalWrite(PIN_LED_G, LOW);
-    digitalWrite(PIN_LED_B, LOW);
+    // digitalWrite(PIN_LED_G, LOW);
+    // digitalWrite(PIN_LED_B, LOW);
   }
+  Serial.println("Lora started");
 
   if (!storage.begin()) {
     Serial.println("ERROR: storage");
-    digitalWrite(PIN_LED_G, LOW);
-    digitalWrite(PIN_LED_B, LOW);
+    // digitalWrite(PIN_LED_G, LOW);
+    // digitalWrite(PIN_LED_B, LOW);
   }
+
+  Serial.println("Storage started");
 
   if (!gps.begin()) {
     Serial.println(F("ERROR: gps"));
-    digitalWrite(PIN_LED_G, LOW);
-    digitalWrite(PIN_LED_B, LOW);
+    // digitalWrite(PIN_LED_G, LOW);
+    // digitalWrite(PIN_LED_B, LOW);
   }
-
-  delay(5000);
+  Serial.println("GPS started");
+  delay(1000);
 
   for (int i = 0; i < 10; i++) {
-    digitalWrite(PIN_LED_R, HIGH); // 10 flashes indicate success
-    delay(200);
-    digitalWrite(PIN_LED_G, HIGH); // 10 flashes indicate success
-    delay(200);
-    digitalWrite(PIN_LED_B, HIGH); // 10 flashes indicate success
-    delay(200);
-    digitalWrite(PIN_LED_R, LOW);
-    delay(200);
-    digitalWrite(PIN_LED_G, LOW);
-    delay(200);
-    digitalWrite(PIN_LED_B, LOW);
-  }
-}
 
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(200);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(200);
+  }
+
+  digitalWrite(LED_BUILTIN, HIGH);
+}
 // void pause_gps()
 // {
 //   GPS.sendCommand(PMTK_BACKUP_MODE);
@@ -196,6 +196,7 @@ void loop() {
 
   if (GPS_ACTIVE) {
     if ((millis() - gps_last_check_time) >= gps_check_interval) {
+      Serial.println("GPS check");
       if (gps.getPVT() == true) {
         float latitude = gps.getLatitude();
         latitude = latitude / 10000000;
@@ -242,16 +243,23 @@ void loop() {
       gps_last_check_time = millis();
     }
 
+    // TODO need to check if we have a fix and add to the if statement
     if (millis() - start_time >= gps_run_time) {
+      Serial.println("GPS run time expired");
       gps.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
       GPS_ACTIVE = false;
+      // add the readings to storage
+      // storage.begin();
+      storage.set_latest_message(latest_location);
+      // storage.write_next_message(latest_location,
+      // classifier.latest_activity); storage.sleep();
+
+      // turn on lora
+      LORA_ACTIVE = true;
+      lora_start_time = millis();
     }
-    Serial.println(F("Going to sleep for 1 minute"));
-    // sleep for 1 minute
-    delay(1000 * 60);
 
     // wake the gps
-    wake_gps();
 
     //       char c = GPS.read();
     //       if (GPS.newNMEAreceived()) GPS.parse(GPS.lastNMEA());
@@ -291,18 +299,6 @@ void loop() {
     //         gps_last_check_time = millis();
     //
     //       }
-  }
-
-  if ((!LORA_ACTIVE) && (!GPS_ACTIVE)) {
-    // add the readings to storage
-    // storage.begin();
-    storage.set_latest_message(latest_location);
-    // storage.write_next_message(latest_location, classifier.latest_activity);
-    // storage.sleep();
-
-    // turn on lora
-    LORA_ACTIVE = true;
-    lora_start_time = millis();
   }
 
   if (LORA_ACTIVE) {

@@ -1,3 +1,4 @@
+#include <cstdint>
 /**************************************************************************/
 
 /**************************************************************************/
@@ -27,7 +28,7 @@ private:
 
   int record_size = 12;
 
-  int last_record_sent = 0;
+  uint8_t last_record_sent = 0;
 
   uint16_t currentSectorIndex;
   uint16_t currentRecordIndex;
