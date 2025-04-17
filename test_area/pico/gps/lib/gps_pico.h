@@ -86,37 +86,17 @@
 // SFE_UBLOX_DISABLE_HNR // Uncommenting this line will disable the HNR support
 // to save memory
 
-// The code exceeds the program memory on the ATmega328P (Arduino Uno), so let's
-// delete the minor debug messages and disable auto-NMEA and RAM-heavy support
-// anyway However, the ATmega2560 and ATmega1280 _do_ have enough memory, so
-// let's exclude those
-#if !defined(SFE_UBLOX_REDUCED_PROG_MEM) && defined(ARDUINO_ARCH_AVR) &&       \
-    !defined(ARDUINO_AVR_MEGA2560) && !defined(ARDUINO_AVR_MEGA) &&            \
-    !defined(ARDUINO_AVR_ADK)
-#define SFE_UBLOX_REDUCED_PROG_MEM
-#endif
-#if !defined(SFE_UBLOX_DISABLE_AUTO_NMEA) && defined(ARDUINO_ARCH_AVR) &&      \
-    !defined(ARDUINO_AVR_MEGA2560) && !defined(ARDUINO_AVR_MEGA) &&            \
-    !defined(ARDUINO_AVR_ADK)
-#define SFE_UBLOX_DISABLE_AUTO_NMEA
-#endif
-#if !defined(SFE_UBLOX_DISABLE_RTCM_LOGGING) && defined(ARDUINO_ARCH_AVR) &&   \
-    !defined(ARDUINO_AVR_MEGA2560) && !defined(ARDUINO_AVR_MEGA) &&            \
-    !defined(ARDUINO_AVR_ADK)
-#define SFE_UBLOX_DISABLE_RTCM_LOGGING
-#endif
-#if !defined(SFE_UBLOX_DISABLE_RAWX_SFRBX_PMP_QZSS_SAT) &&                     \
-    defined(ARDUINO_ARCH_AVR) && !defined(ARDUINO_AVR_MEGA2560) &&             \
-    !defined(ARDUINO_AVR_MEGA) && !defined(ARDUINO_AVR_ADK)
-#define SFE_UBLOX_DISABLE_RAWX_SFRBX_PMP_QZSS_SAT
-#endif
-
 #include "sfe_bus.h"
 #include "u-blox_Class_and_ID.h"
 #include "u-blox_config_keys.h"
 #include "u-blox_external_typedefs.h"
 #include "u-blox_structs.h"
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <string>
 
+using namespace std;
 // Define a digital pin to aid debugging
 // Leave set to -1 if not needed
 const int debugPin = -1;
@@ -135,7 +115,7 @@ public:
     setCommunicationBus(_i2cBus);
 
     // Initialize the I2C buss class i.e. setup default Wire port
-    _i2cBus.init(deviceAddress);
+    // _i2cBus.init(deviceAddress);
 
     // Initialize the system - return results
     return init(maxWait, assumeSuccess);
@@ -284,7 +264,6 @@ public:
 #endif
 #else
   void enableDebugging(
-      Print &debugPort = Serial,
       bool printLimitedDebug = false); // Given a port to print to, enable debug
                                        // messages. Default to all, not limited.
 #endif
@@ -412,7 +391,7 @@ public:
 // data to be sent - starting from offset.
 #define defaultMGAdelay 7 // Default to waiting for 7ms between each MGA message
   size_t pushAssistNowData(
-      const String &dataBytes, size_t numDataBytes,
+      const std::string &dataBytes, size_t numDataBytes,
       sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO,
       uint16_t maxWait = defaultMGAdelay);
   size_t pushAssistNowData(
@@ -420,7 +399,7 @@ public:
       sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO,
       uint16_t maxWait = defaultMGAdelay);
   size_t pushAssistNowData(
-      bool skipTime, const String &dataBytes, size_t numDataBytes,
+      bool skipTime, const std::string &dataBytes, size_t numDataBytes,
       sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO,
       uint16_t maxWait = defaultMGAdelay);
   size_t pushAssistNowData(
@@ -428,7 +407,7 @@ public:
       sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO,
       uint16_t maxWait = defaultMGAdelay);
   size_t pushAssistNowData(
-      size_t offset, bool skipTime, const String &dataBytes,
+      size_t offset, bool skipTime, const std::string &dataBytes,
       size_t numDataBytes,
       sfe_ublox_mga_assist_ack_e mgaAck = SFE_UBLOX_MGA_ASSIST_ACK_NO,
       uint16_t maxWait = defaultMGAdelay);
@@ -473,7 +452,7 @@ public:
   // tomorrow based on today's date Returns numDataBytes if unsuccessful TO DO:
   // enhance this so it will find the nearest data for the chosen day - instead
   // of an exact match
-  size_t findMGAANOForDate(const String &dataBytes, size_t numDataBytes,
+  size_t findMGAANOForDate(const std::string &dataBytes, size_t numDataBytes,
                            uint16_t year, uint8_t month, uint8_t day,
                            uint8_t daysIntoFuture = 0);
   size_t findMGAANOForDate(const uint8_t *dataBytes, size_t numDataBytes,
@@ -582,17 +561,10 @@ public:
           kUBLOXGNSSDefaultMaxWait); // Configure SPI port to output UBX, NMEA,
                                      // RTCM3, SPARTN or a combination thereof
 
-  void setNMEAOutputPort(
-      Print &outputPort); // Sets the internal variable for the port to direct
-                          // only NMEA characters to
-  void setRTCMOutputPort(
-      Print &outputPort); // Sets the internal variable for the port to direct
-                          // only RTCM characters to
-  void
-  setUBXOutputPort(Print &outputPort); // Sets the internal variable for the
-                                       // port to direct only UBX characters to
-  void setOutputPort(Print &outputPort); // Sets the internal variable for the
-                                         // port to direct ALL characters to
+  // only NMEA characters to
+  // only RTCM characters to
+  // port to direct only UBX characters to
+  // port to direct ALL characters to
 
   // Reset to defaults
 
@@ -3601,20 +3573,6 @@ protected:
   SparkFun_UBLOX_GNSS::GNSSDeviceBus *_sfeBus;
   SparkFun_UBLOX_GNSS::SfeI2C _i2cBus;
 
-  SparkFun_UBLOX_GNSS::SfePrint
-      _nmeaOutputPort; // The user can assign an output port to print NMEA
-                       // sentences if they wish
-  SparkFun_UBLOX_GNSS::SfePrint
-      _rtcmOutputPort; // The user can assign an output port to print RTCM
-                       // sentences if they wish
-  SparkFun_UBLOX_GNSS::SfePrint
-      _ubxOutputPort; // The user can assign an output port to print UBX
-                      // sentences if they wish
-  SparkFun_UBLOX_GNSS::SfePrint
-      _outputPort; // The user can assign an output port to print ALL characters
-                   // to if they wish
-  SparkFun_UBLOX_GNSS::SfePrint
-      _debugSerial;         // The stream to send debug messages to if enabled
   bool _printDebug = false; // Flag to print the serial commands we are sending
                             // to the Serial port for debug
   bool _printLimitedDebug =

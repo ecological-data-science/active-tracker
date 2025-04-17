@@ -57,11 +57,7 @@
 // sfe_bus.h
 
 #pragma once
-
-#include <Arduino.h>
-#include <SPI.h>
-#include <Wire.h>
-
+#include <cstdint>
 namespace SparkFun_UBLOX_GNSS {
 
 // The following abstract class is used an interface for upstream
@@ -108,8 +104,6 @@ public:
 
   bool init(uint8_t address);
 
-  bool init(TwoWire &wirePort, uint8_t address, bool bInit = false);
-
   bool ping();
 
   uint16_t available();
@@ -138,7 +132,7 @@ public:
   uint8_t readBytes(uint8_t *data, uint8_t length);
 
 private:
-  TwoWire *_i2cPort;
+  uint8_t *_i2cPort;
   uint8_t _address;
 };
 

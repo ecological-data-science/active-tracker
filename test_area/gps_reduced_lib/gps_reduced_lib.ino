@@ -5,8 +5,8 @@
  *
  */
 
-#include "u-blox_GNSS_v3.h" //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
-SFE_UBLOX_GNSS gps;
+#include "u-blox_GNSS.h" //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
+DevUBLOXGNSS gps;
 
 // #include "pico/sleep.h"
 // #include "pico/stdlib.h"
@@ -29,7 +29,7 @@ void setup() {
   Wire.begin();
   Serial.begin(115200);
   // while (!Serial); //Wait for user to open terminal
-  delay(5000);
+  delay(7000);
   Serial.println("SparkFun u-blox Example");
 
   pinMode(PIN_LED_R, OUTPUT);

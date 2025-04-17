@@ -1,22 +1,12 @@
 
 #include "u-blox_GNSS.h"
-#include <Arduino.h>
 
 DevUBLOXGNSS::DevUBLOXGNSS(void) {
-  // Constructor
-  if (debugPin >= 0) {
-    pinMode((uint8_t)debugPin, OUTPUT);
-    digitalWrite((uint8_t)debugPin, HIGH);
-  }
 
   _logNMEA.all = 0; // Default to passing no NMEA messages to the file buffer
   _processNMEA.all = SFE_UBLOX_FILTER_NMEA_ALL; // Default to passing all NMEA
                                                 // messages to processNMEA
   _logRTCM.all = 0; // Default to passing no RTCM messages to the file buffer
-
-#ifndef SFE_UBLOX_DISABLE_RTCM_LOGGING
-  rtcmInputStorage.init();
-#endif
 }
 
 DevUBLOXGNSS::~DevUBLOXGNSS(void) {
