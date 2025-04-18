@@ -108,14 +108,14 @@ public:
 
   // New in v3.0: hardware interface is abstracted
   bool isConnected(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);
-  bool begin(uint8_t deviceAddress = kUBLOXGNSSDefaultAddress,
+  bool begin(i2c_inst_t *i2c, uint8_t deviceAddress = kUBLOXGNSSDefaultAddress,
              uint16_t maxWait = kUBLOXGNSSDefaultMaxWait,
              bool assumeSuccess = false) {
     // Setup  I2C object and pass into the superclass
     setCommunicationBus(_i2cBus);
 
     // Initialize the I2C buss class i.e. setup default Wire port
-    // _i2cBus.init(deviceAddress);
+    _i2cBus.init(deviceAddress, i2c);
 
     // Initialize the system - return results
     return init(maxWait, assumeSuccess);

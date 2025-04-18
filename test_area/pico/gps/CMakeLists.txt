@@ -19,13 +19,13 @@ pico_sdk_init()
 
 
 add_executable(gps
-            gps.c
+            gps.cpp
             lib/gps_pico.cpp
             lib/sfe_bus.cpp
 )
 
 # pull in common dependencies
-target_link_libraries(gps pico_stdlib)
+target_link_libraries(gps pico_stdlib hardware_i2c)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb(gps 1)

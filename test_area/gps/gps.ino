@@ -9,8 +9,8 @@
 #include <SparkFun_u-blox_GNSS_v3.h> //http://librarymanager/All#SparkFun_u-blox_GNSS_v3
 SFE_UBLOX_GNSS gps;
 
-#include "pico/stdlib.h"
-#include "pico/sleep.h"
+//#include "pico/stdlib.h"
+//#include "pico/sleep.h"
 
 #define PIN_LED_R (18u)
 #define PIN_LED_G (19u)
@@ -38,8 +38,8 @@ void wake_gps() {
 
 void setup() {
 
-  pinMode(WAKEUP_PIN, OUTPUT);
-  digitalWrite(WAKEUP_PIN, LOW);
+  //pinMode(WAKEUP_PIN, OUTPUT);
+  //digitalWrite(WAKEUP_PIN, LOW);
 
   Wire.begin();
   Serial.begin(115200);
