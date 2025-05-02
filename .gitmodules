@@ -7,3 +7,6 @@
 [submodule "firmware/external/pico-extras"]
 	path = firmware/external/pico-extras
 	url = https://github.com/raspberrypi/pico-extras.git
+[submodule "firmware/external/pico-tflmicro"]
+	path = firmware/external/pico-tflmicro
+	url = https://github.com/raspberrypi/pico-tflmicro.git
