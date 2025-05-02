@@ -1,3 +1,6 @@
 [submodule "test_area/pico/tflite/pico-tflmicro"]
 	path = test_area/pico/tflite/pico-tflmicro
 	url = https://github.com/raspberrypi/pico-tflmicro.git
+[submodule "firmware/external/pico-sdk"]
+	path = firmware/external/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
