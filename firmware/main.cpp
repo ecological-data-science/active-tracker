@@ -110,8 +110,8 @@ void main_loop()
     }
 
 
-    // if (GPS_ACTIVE)
-      // GPS_ACTIVE = gps.update();
+    if (GPS_ACTIVE)
+      GPS_ACTIVE = gps.update();
 
     // if (IMU_ACTIVE)
     //   IMU_ACTIVE = classifier.update();

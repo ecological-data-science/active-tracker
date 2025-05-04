@@ -5,6 +5,7 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
+#define WAKEUP_PIN 7
 
 // class for the GPS module
 
@@ -14,12 +15,16 @@ public:
   GPS() : gps_pico() {}
   ~GPS() {}
 
+  bool begin(i2c_inst_t *i2c);
   bool update();
-  bool activate();
+  void activate();
 private:
-  bool deactivate();
+  void deactivate();
 
   absolute_time_t gps_last_check_time;
+  absolute_time_t gps_start_time;
+
+  uint32_t gps_run_time = 1000 * 60 * 10; // GPS will run for up to 10 minutes to get a fix
   uint32_t gps_check_interval_ms = 1000; // 1 second interval
 
 };
