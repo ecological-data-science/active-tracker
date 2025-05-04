@@ -1,28 +1,26 @@
 
-add_library(gps
-    gps.cpp
-    gps_pico.cpp
+add_library(i2cbus STATIC
+    i2c_bus.cpp
 )
 
 # Link against dependencies
-target_link_libraries(gps 
+target_link_libraries(i2cbus PUBLIC 
     pico_stdlib 
     hardware_i2c
-    i2cbus  # Add the sfe_bus library as a dependency
 )
 
 # Add public include directory
-target_include_directories(gps PUBLIC 
+target_include_directories(i2cbus PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 
 # Compile options for this target only
-target_compile_options(gps PRIVATE
+target_compile_options(i2cbus PRIVATE
     -Wall
     -Wno-format
     -Wno-unused-function
 )
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(gps PRIVATE -Wno-maybe-uninitialized)
+    target_compile_options(i2cbus PRIVATE -Wno-maybe-uninitialized)
 endif()

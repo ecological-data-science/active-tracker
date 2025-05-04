@@ -5,28 +5,26 @@
   Adapted from SparkFun u-blox GNSS Arduino Library v3.0
   Original: https://github.com/sparkfun/SparkFun_u-blox_GNSS_v3
 
-  Modified for Raspberry Pi Pico RP2040 SDK
+  Modified for Raspberry Pi Pico RP2040 SDK by Colin Torney 2025
 */
 
-// sfe_bus.cpp
 
-#include "sfe_bus.h"
-#include "pico/stdlib.h"
+#include "i2c_bus.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor
 //
 
-namespace SparkFun_UBLOX_GNSS {
+namespace i2c {
 
-SfeI2C::SfeI2C(void) : _i2cPort{nullptr}, _address{0} {}
+i2cbus::i2cbus(void) : _i2cPort{nullptr}, _address{0} {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // I2C init()
 //
 // Methods to init/setup this device.
 // The caller can provide an I2C Port, or this class will use the default.
-bool SfeI2C::init(uint8_t address, i2c_inst_t *i2cPort) {
+bool i2cbus::init(uint8_t address, i2c_inst_t *i2cPort) {
   _i2cPort = i2cPort;
   _address = address;
   return true;
@@ -41,12 +39,12 @@ bool SfeI2C::init(uint8_t address, i2c_inst_t *i2cPort) {
 // ping()
 //
 // Is a device connected?
-bool SfeI2C::ping() {
+bool i2cbus::ping() {
   if (!_i2cPort)
     return false;
 
-  const int MAX_SIZE = 32; // Maximum data size to send
-  uint8_t data[MAX_SIZE];
+  // const int MAX_SIZE = 32; // Maximum data size to send
+  // uint8_t data[MAX_SIZE];
 
   // Try to write 0 bytes to the device address
   // If it responds with an ACK, it exists
@@ -57,9 +55,9 @@ bool SfeI2C::ping() {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // available()
 //
-// Checks how many bytes are waiting in the GNSS's I2C buffer
+// Checks how many bytes are waiting in the I2C buffer
 // It does this by reading registers 0xFD and 0xFE
-uint16_t SfeI2C::available() {
+uint16_t i2cbus::available() {
   if (!_i2cPort)
     return false;
 
@@ -90,7 +88,7 @@ uint16_t SfeI2C::available() {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // writeBytes()
 
-uint8_t SfeI2C::writeBytes(uint8_t *dataToWrite, uint8_t length) {
+uint8_t i2cbus::writeBytes(uint8_t *dataToWrite, uint8_t length) {
   if (!_i2cPort)
     return 0;
 
@@ -109,7 +107,7 @@ uint8_t SfeI2C::writeBytes(uint8_t *dataToWrite, uint8_t length) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // readBytes()
 
-uint8_t SfeI2C::readBytes(uint8_t *data, uint8_t length) {
+uint8_t i2cbus::readBytes(uint8_t *data, uint8_t length) {
   if (!_i2cPort)
     return 0;
 
@@ -123,4 +121,4 @@ uint8_t SfeI2C::readBytes(uint8_t *data, uint8_t length) {
   return 0;
 }
 
-} // namespace SparkFun_UBLOX_GNSS
+} // namespace i2c

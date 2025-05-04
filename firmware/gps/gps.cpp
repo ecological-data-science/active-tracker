@@ -1,74 +1,44 @@
-/**
- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
-/**
- * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
 
-#define PICO_DEFAULT_I2C 0
-#define PICO_DEFAULT_I2C_SDA_PIN 4
-#define PICO_DEFAULT_I2C_SCL_PIN 5
+#include "gps.h"
 
-#include "hardware/i2c.h"
-#include "lib/gps_pico.h"
-#include "pico/stdlib.h"
-#include <stdio.h>
+bool GPS::update() {
 
-DevUBLOXGNSS gps;
-
-int main() {
-  stdio_init_all();
-  sleep_ms(5000);
-
-  // Initialize I2C using the default pins
-  i2c_init(i2c0, 100 * 1000); // 100 kHz
-
-  gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
-  gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
-  gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
-  gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
-
-  sleep_ms(1000);
-
-  printf("Starting GPS ...\n");
-  sleep_ms(1000);
-  // Now initialize the GPS
-  if (gps.begin(i2c0) == false) {
-    printf("GPS module not detected, check wiring\n");
-    while (1) {
-      sleep_ms(100);
-    }
-  }
-
-  printf("GPS module initialized successfully\n");
-
-  while (true) {
-    if (gps.getPVT() == true) {
-      int32_t latitude = gps.getLatitude();
+  if (absolute_time_diff_us(gps_last_check_time, get_absolute_time()) >=
+      gps_check_interval_ms * 1000) {
+    // Time to check GPS
+    gps_last_check_time = get_absolute_time();
+    // Your GPS checking code here
+    if (getPVT() == true) {
+      int32_t latitude = getLatitude();
       printf("Lat: %ld", latitude);
 
-      int32_t longitude = gps.getLongitude();
+      int32_t longitude = getLongitude();
       printf(" Long: %ld", longitude);
       printf(" (degrees * 10^-7) Datetime:");
 
-      printf("%d-%d-%d %d:%d:%d", gps.getYear(), gps.getMonth(), gps.getDay(),
-             gps.getHour(), gps.getMinute(), gps.getSecond());
+      printf("%d-%d-%d %d:%d:%d", getYear(), getMonth(), getDay(), getHour(),
+             getMinute(), getSecond());
 
-      bool fixOk = gps.getGnssFixOk();
+      bool fixOk = getGnssFixOk();
       printf(" Fix ok: %d\n", fixOk);
 
-      uint8_t pdop = gps.getPDOP();
+      uint8_t pdop = getPDOP();
       printf(" PDOP: %d\n", pdop);
 
-      if (gps.getTimeFullyResolved() && gps.getTimeValid()) {
+      if (getTimeFullyResolved() && getTimeValid()) {
         printf("Time is valid and fully resolved\n");
       }
+      return true; // Successfully updated
     }
-
-    sleep_ms(1000 * 10);
+    printf("No PVT data available\n");
   }
+  return true;
+}
+
+bool GPS::activate() {
+  return true; // Implement activation logic if needed
+}
+
+bool GPS::deactivate() {
+  return true; // Implement deactivation logic if needed
 }

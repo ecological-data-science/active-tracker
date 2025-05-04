@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 # This assumes PICO_SDK_PATH is set correctly as an environment variable
-set(PICO_SDK_PATH $ENV{PICO_SDK_PATH})
+set(PICO_SDK_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/pico-sdk)
 
 set(PICO_SDK_INIT_CMAKE_FILE ${PICO_SDK_PATH}/pico_sdk_init.cmake)
 include(${PICO_SDK_INIT_CMAKE_FILE})
@@ -17,13 +17,21 @@ project(pico_tracker C CXX ASM)
 # Initialize the SDK
 pico_sdk_init()
 
+# Add the lib subdirectory
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/gps)
 
 add_executable(pico_tracker
             main.cpp
 )
 
 # pull in common dependencies
-target_link_libraries(pico_tracker pico_stdlib hardware_i2c)
+target_link_libraries(pico_tracker pico_stdlib hardware_i2c gps)
+
+target_include_directories(pico_tracker
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb(pico_tracker 1)
@@ -39,3 +47,4 @@ add_compile_options(-Wall
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-Wno-maybe-uninitialized)
 endif()
+
