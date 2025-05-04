@@ -6,7 +6,7 @@
 // TODO: implement the following classes
 GPS gps;
 // Storage storage;
-// Classifier classifier;
+Classifier classifier;
 // Lora lora;
 // LowPower lowPower;
 
@@ -18,8 +18,6 @@ bool LORA_ACTIVE = false;
 unsigned long gps_run_time = 1000*60*10;  // gps will run for up to 10 minutes to get a fix
 unsigned long lora_run_time = 1000*60*20; // lora will broadcast for up to 20 minutes every hour
 
-unsigned long imu_interval = 200; // update imu every 200ms for 5hz readings
-unsigned long last_imu_time = 0;
 
 unsigned long gps_check_interval = 60*1000; // check the gps fix every minute  
 unsigned long gps_last_check_time = 0;  
@@ -68,6 +66,11 @@ bool setup()
   }
 
   // initialize the RTC
+  if (!classifier.begin(i2c0)) 
+  {
+    printf("classifier initialization failed\n");
+    return false;
+  }
 
   // initialize the classifier
 
@@ -113,8 +116,8 @@ void main_loop()
     if (GPS_ACTIVE)
       GPS_ACTIVE = gps.update();
 
-    // if (IMU_ACTIVE)
-    //   IMU_ACTIVE = classifier.update();
+    if (IMU_ACTIVE)
+      IMU_ACTIVE = classifier.update();
 
 
     if ((!IMU_ACTIVE) && (!LORA_ACTIVE))

@@ -16,7 +16,8 @@
 #define ICM20X_B0_PWR_MGMT_1 0x06 ///< primary power management register
 
 #include "pico/stdlib.h"
-#include "sfe_bus.h"
+#include "i2c_bus.h"
+
 #define SENSORS_GRAVITY_EARTH (9.80665F) /**< Earth's gravity in m/s^2 */
 #define SENSORS_DPS_TO_RADS (0.017453293F) /**< Degrees/s to rad/s multiplier */
 /** The accelerometer data range */
@@ -125,9 +126,9 @@ public:
 
 private:
   void scaleValues(void);
-  bool ping();
 
 protected:
+  bool ping();
   uint8_t current_accel_range; ///< accelerometer range cache
   uint8_t current_gyro_range;  ///< gyro range cache
   float temperature,           ///< Last reading's temperature (C)
@@ -143,8 +144,7 @@ protected:
 
   i2c_inst_t *_i2cPort;
   uint8_t _address;
-  SfeI2C _i2cBus;
-  GNSSDeviceBus *_sfeBus;
+  i2c::i2cbus _i2cBus;
   void _read(void);
   void _setBank(uint8_t bank_number);
   int16_t rawAccX, ///< temp variables

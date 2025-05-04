@@ -1,6 +1,7 @@
 
 add_library(classifier
     classifier.cpp
+    imu.cpp
 )
 
 # Link against dependencies
@@ -13,6 +14,7 @@ target_link_libraries(classifier
 # Add public include directory
 target_include_directories(classifier PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/filter
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 

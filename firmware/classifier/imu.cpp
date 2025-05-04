@@ -19,15 +19,15 @@ void imu::writeAccelRange(uint8_t new_accel_range) {
   uint8_t reg_addr = ICM20X_B2_ACCEL_CONFIG_1;
   uint8_t reg_data[2] = {reg_addr, 0};
   
-  _sfeBus->writeBytes(reg_data, 1);
-  _sfeBus->readBytes(&reg_data[1], 1);
+  _i2cBus.writeBytes(reg_data, 1);
+  _i2cBus.readBytes(&reg_data[1], 1);
   
   // Modify only the bits we want (bits 1-2)
   reg_data[1] &= ~(0x03 << 1); // Clear bits 1-2
   reg_data[1] |= (new_accel_range & 0x03) << 1; // Set bits 1-2 to new_accel_range
   
   // Write back the modified value
-  _sfeBus->writeBytes(reg_data, 2);
+  _i2cBus.writeBytes(reg_data, 2);
   
   current_accel_range = new_accel_range;
   _setBank(0);
@@ -40,22 +40,22 @@ void imu::writeGyroRange(uint8_t new_gyro_range) {
   uint8_t reg_addr = ICM20X_B2_GYRO_CONFIG_1;
   uint8_t reg_data[2] = {reg_addr, 0};
   
-  _sfeBus->writeBytes(reg_data, 1);
-  _sfeBus->readBytes(&reg_data[1], 1);
+  _i2cBus.writeBytes(reg_data, 1);
+  _i2cBus.readBytes(&reg_data[1], 1);
   
   // Modify only the bits we want (bits 1-2)
   reg_data[1] &= ~(0x03 << 1); // Clear bits 1-2
   reg_data[1] |= (new_gyro_range & 0x03) << 1; // Set bits 1-2 to new_gyro_range
   
   // Write back the modified value
-  _sfeBus->writeBytes(reg_data, 2);
+  _i2cBus.writeBytes(reg_data, 2);
   
   current_gyro_range = new_gyro_range;
   _setBank(0);
 }
 
 bool imu::ping() {
-  bool ok = _sfeBus->ping();
+  bool ok = _i2cBus.ping();
   return ok;
 }
 
@@ -66,8 +66,8 @@ bool imu::enableAccelDLPF(bool enable, icm20x_accel_cutoff_t cutoff_freq) {
   uint8_t reg_addr = ICM20X_B2_ACCEL_CONFIG_1;
   uint8_t reg_data[2] = {reg_addr, 0};
   
-  _sfeBus->writeBytes(reg_data, 1);
-  _sfeBus->readBytes(&reg_data[1], 1);
+  _i2cBus.writeBytes(reg_data, 1);
+  _i2cBus.readBytes(&reg_data[1], 1);
   
   if (enable) {
     // Set ACCEL_FCHOICE = 0 (enable DLPF)
@@ -81,7 +81,7 @@ bool imu::enableAccelDLPF(bool enable, icm20x_accel_cutoff_t cutoff_freq) {
   }
   
   // Write back the modified value
-  _sfeBus->writeBytes(reg_data, 2);
+  _i2cBus.writeBytes(reg_data, 2);
   
   _setBank(0);
   return true;
@@ -94,8 +94,8 @@ bool imu::enableGyrolDLPF(bool enable, icm20x_gyro_cutoff_t cutoff_freq) {
   uint8_t reg_addr = ICM20X_B2_GYRO_CONFIG_1;
   uint8_t reg_data[2] = {reg_addr, 0};
   
-  _sfeBus->writeBytes(reg_data, 1);
-  _sfeBus->readBytes(&reg_data[1], 1);
+  _i2cBus.writeBytes(reg_data, 1);
+  _i2cBus.readBytes(&reg_data[1], 1);
   
   if (enable) {
     // Set GYRO_FCHOICE = 0 (enable DLPF)
@@ -109,7 +109,7 @@ bool imu::enableGyrolDLPF(bool enable, icm20x_gyro_cutoff_t cutoff_freq) {
   }
   
   // Write back the modified value
-  _sfeBus->writeBytes(reg_data, 2);
+  _i2cBus.writeBytes(reg_data, 2);
   
   _setBank(0);
   return true;
@@ -121,8 +121,8 @@ uint8_t imu::getGyroRateDivisor(void) {
   uint8_t reg_addr = ICM20X_B2_GYRO_SMPLRT_DIV;
   uint8_t divisor = 0;
   
-  _sfeBus->writeBytes(&reg_addr, 1);
-  _sfeBus->readBytes(&divisor, 1);
+  _i2cBus.writeBytes(&reg_addr, 1);
+  _i2cBus.readBytes(&divisor, 1);
   
   _setBank(0);
   return divisor;
@@ -132,7 +132,7 @@ void imu::setGyroRateDivisor(uint8_t new_gyro_divisor) {
   _setBank(2);
   
   uint8_t reg_data[2] = {ICM20X_B2_GYRO_SMPLRT_DIV, new_gyro_divisor};
-  _sfeBus->writeBytes(reg_data, 2);
+  _i2cBus.writeBytes(reg_data, 2);
   
   _setBank(0);
 }
@@ -143,8 +143,8 @@ uint16_t imu::getAccelRateDivisor(void) {
   uint8_t reg_addr = ICM20X_B2_ACCEL_SMPLRT_DIV_1;
   uint8_t data[2];
   
-  _sfeBus->writeBytes(&reg_addr, 1);
-  _sfeBus->readBytes(data, 2); // Read two bytes
+  _i2cBus.writeBytes(&reg_addr, 1);
+  _i2cBus.readBytes(data, 2); // Read two bytes
   
   uint16_t divisor = (uint16_t)data[0] << 8 | data[1];
   
@@ -161,7 +161,7 @@ void imu::setAccelRateDivisor(uint16_t new_accel_divisor) {
     (uint8_t)(new_accel_divisor & 0xFF)         // LSB
   };
   
-  _sfeBus->writeBytes(reg_data, 3);
+  _i2cBus.writeBytes(reg_data, 3);
   
   _setBank(0);
 }
@@ -171,14 +171,14 @@ void imu::reset(void) {
   
   // Write to PWR_MGMT_1 register, setting the reset bit
   uint8_t reg_data[2] = {ICM20X_B0_PWR_MGMT_1, 0x80}; // 0x80 = reset bit
-  _sfeBus->writeBytes(reg_data, 2);
+  _i2cBus.writeBytes(reg_data, 2);
   
   // Wait for reset to complete
   sleep_ms(100);
   
   // Clear reset bit and set clock source
   reg_data[1] = 0x01; // Auto select best clock source
-  _sfeBus->writeBytes(reg_data, 2);
+  _i2cBus.writeBytes(reg_data, 2);
   
   // Wait for device to stabilize
   sleep_ms(10);
@@ -271,7 +271,7 @@ void imu::_setBank(uint8_t bank_number) {
   data[1] = (bank_number & 0b11) << 4;
   
   // Write to the bank select register
-  _sfeBus->writeBytes(data, 2);
+  _i2cBus.writeBytes(data, 2);
 }
 
 void imu::_read(void) {
@@ -284,10 +284,10 @@ void imu::_read(void) {
   
   // First, write the register address we want to read from
   uint8_t reg = ICM20X_B0_ACCEL_XOUT_H;
-  _sfeBus->writeBytes(&reg, 1);
+  _i2cBus.writeBytes(&reg, 1);
   
   // Then read the data
-  _sfeBus->readBytes(buffer, numbytes);
+  _i2cBus.readBytes(buffer, numbytes);
 
   rawAccX = buffer[0] << 8 | buffer[1];
   rawAccY = buffer[2] << 8 | buffer[3];
@@ -369,7 +369,7 @@ void imu::_read(void) {
 //   _setBank(0);
 // }
 // bool imu::ping() {
-//   bool ok = _sfeBus->ping();
+//   bool ok = _i2cBus.ping();
 //   return ok;
 // }
 // bool imu::enableAccelDLPF(bool enable, icm20x_accel_cutoff_t cutoff_freq) {
@@ -424,7 +424,7 @@ void imu::_read(void) {
 //   data[1] = (bank_number & 0b11) << 4;
 //
 //   // Write to the bank select register
-//   _sfeBus->writeBytes(data, 2);
+//   _i2cBus.writeBytes(data, 2);
 // }
 //
 // void imu::_read(void) {
@@ -437,10 +437,10 @@ void imu::_read(void) {
 //
 //   // First, write the register address we want to read from
 //   uint8_t reg = ICM20X_B0_ACCEL_XOUT_H;
-//   _sfeBus->writeBytes(&reg, 1);
+//   _i2cBus.writeBytes(&reg, 1);
 //
 //   // Then read the data
-//   _sfeBus->readBytes(buffer, numbytes);
+//   _i2cBus.readBytes(buffer, numbytes);
 //
 //   rawAccX = buffer[0] << 8 | buffer[1];
 //   rawAccY = buffer[2] << 8 | buffer[3];

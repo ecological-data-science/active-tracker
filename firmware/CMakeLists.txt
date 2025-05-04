@@ -20,13 +20,14 @@ pico_sdk_init()
 # Add the lib subdirectory
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/gps)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/classifier)
 
 add_executable(pico_tracker
             main.cpp
 )
 
 # pull in common dependencies
-target_link_libraries(pico_tracker pico_stdlib hardware_i2c gps)
+target_link_libraries(pico_tracker pico_stdlib hardware_i2c gps classifier)
 
 target_include_directories(pico_tracker
     PRIVATE

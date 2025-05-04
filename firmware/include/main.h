@@ -10,6 +10,7 @@
 #include "hardware/i2c.h"
 
 #include "gps.h"
+#include "classifier.h"
 
 bool setup();
 void main_loop();
