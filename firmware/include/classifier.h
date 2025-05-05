@@ -4,6 +4,7 @@
 #include "pico/stdlib.h"
 #include "filter/imuFilter.h"
 #include "imu.h"
+#include "tflite_classifier.h"
 #include <stdio.h>
 
 // class for the classifier
@@ -45,6 +46,7 @@ private:
   sensors_event_t gyro;
   sensors_event_t temp;
   imuFilter <&GAIN> filter;
+  TFLiteClassifier tflite;
 
   float acc_bias[3] = {0.0f, 0.0f, SENSORS_GRAVITY_EARTH};
   float gyro_bias[3] = {0.0f, 0.0f, 0.0f};

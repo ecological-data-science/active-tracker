@@ -17,6 +17,9 @@ project(pico_tracker C CXX ASM)
 # Initialize the SDK
 pico_sdk_init()
 
+# Add the external libraries
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external)
+
 # Add the lib subdirectory
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/gps)

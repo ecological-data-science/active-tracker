@@ -1,14 +1,18 @@
 
+
 add_library(classifier
     classifier.cpp
     imu.cpp
+    tflite_classifier.cpp
+    hello_world_float_model_data.cpp
 )
 
 # Link against dependencies
 target_link_libraries(classifier 
     pico_stdlib 
     hardware_i2c
-    i2cbus  # Add the sfe_bus library as a dependency
+    i2cbus 
+    pico-tflmicro
 )
 
 # Add public include directory

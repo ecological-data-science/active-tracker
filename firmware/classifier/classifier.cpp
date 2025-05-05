@@ -15,12 +15,28 @@ bool Classifier::begin(i2c_inst_t *i2c) {
   writeGyroRange(3);
   writeAccelRange(3);
   // 1100Hz/(1+10) = 100Hz
-  setGyroRateDivisor(10);
+  // setGyroRateDivisor(10);
 
   // # 1125Hz/(1+20) = 53.57Hz
-  setAccelRateDivisor(20);
+  // setAccelRateDivisor(20);
   if (!ping())
     return false; // Sensor did not ack
+
+  setAccelRateDivisor(225);
+  setGyroRateDivisor(225);
+
+
+  enableAccelDLPF(true, ICM20X_ACCEL_FREQ_5_7_HZ);
+  enableGyrolDLPF(true, ICM20X_GYRO_FREQ_5_7_HZ);
+  sleep_ms(500);
+
+  getEvent(&accel, &gyro, &temp);
+  float ax = float(accel.acceleration.x);
+  float ay = float(accel.acceleration.y);
+  float az = float(accel.acceleration.z);
+    
+  acc_bias[2] = pow( ax*ax + ay*ay + az*az,0.5) ;
+  filter.setup( ax,ay,az);     
   return true;
 }
 
