@@ -1,7 +1,6 @@
 
 #include "tflite_classifier.h"
 
-
 TFLiteClassifier::TFLiteClassifier() {
   printf("starting setup\n");
   tflite::InitializeTarget();
@@ -9,7 +8,7 @@ TFLiteClassifier::TFLiteClassifier() {
 
   // Map the model into a usable data structure. This doesn't involve any
   // copying or parsing, it's a very lightweight operation.
-  model = tflite::GetModel(g_hello_world_float_model_data);
+  model = tflite::GetModel(model_tflite);
   if (model->version() != TFLITE_SCHEMA_VERSION) {
     printf("Exiting setup\n");
     printf("Schema version mismatch\n");
@@ -19,12 +18,10 @@ TFLiteClassifier::TFLiteClassifier() {
   // This pulls in all the operation implementations we need.
   // NOLINTNEXTLINE(runtime-global-variables)
   static tflite::MicroMutableOpResolver<1> resolver;
-  TfLiteStatus resolve_status = resolver.AddFullyConnected();
-  if (resolve_status != kTfLiteOk) {
-    printf("Exiting setup\n");
-    printf("Op resolution failed\n");
-    return;
-  }
+  resolver.AddFullyConnected();
+  resolver.AddRelu();
+  resolver.AddMaxPool2D();
+  resolver.AddConv2D();
 
   // Build an interpreter to run the model with.
   static tflite::MicroInterpreter static_interpreter(
@@ -43,46 +40,49 @@ TFLiteClassifier::TFLiteClassifier() {
   input = interpreter->input(0);
   output = interpreter->output(0);
 
-  // Keep track of how many inferences we have performed.
-  inference_count = 0;
+  outputs = (float *)calloc(N_OUTPUTS, sizeof(float));
   printf("Exiting setup\n");
   printf("Setup complete\n");
 }
 
-TFLiteClassifier::~TFLiteClassifier() {
-  // The model pointer is owned by the application and doesn't need to be freed
-  // The interpreter is statically allocated and doesn't need to be freed
-  // Just reset any state if needed
-  inference_count = 0;
-  printf("TFLiteClassifier destroyed\n");
+TFLiteClassifier::~TFLiteClassifier() { free(outputs); }
+
+int TFLiteClassifier::getClassificationResult() {
+
+  float maxProba = outputs[0];
+  int classification = 0;
+
+  for (uint16_t i = 1; i < N_OUTPUTS; i++) {
+    if (outputs[i] > maxProba) {
+      classification = i;
+      maxProba = outputs[i];
+    }
+  }
+  return classification;
 }
 
-
-
 // The name of this function is important for Arduino compatibility.
-void TFLiteClassifier::classify(const float* input_data, float* output_data) {
+int TFLiteClassifier::classify(const float *input_data) {
   // Calculate an x value to feed into the model. We compare the current
   // inference_count to the number of inferences per cycle to determine
   // our position within the range of possible x values the model was
   // trained on, and use this to calculate a value.
-  float position = static_cast<float>(inference_count) /
-                   static_cast<float>(kInferencesPerCycle);
-  float x = position * kXrange;
 
   // Quantize the input from floating-point to integer
   // int8_t x_quantized = x / input->params.scale + input->params.zero_point;
-  // printf("scale: %f, zero_point: %d\n", input->params.scale, input->params.zero_point);
-  // printf("x: %f, x_quantized: %d\n", static_cast<double>(x), x_quantized);
-  // Place the quantized input in the model's input tensor
-  // input->data.int8[0] = x_quantized;
-  input->data.f[0] = x;
+  // printf("scale: %f, zero_point: %d\n", input->params.scale,
+  // input->params.zero_point); printf("x: %f, x_quantized: %d\n",
+  // static_cast<double>(x), x_quantized); Place the quantized input in the
+  // model's input tensor input->data.int8[0] = x_quantized;
+  for (uint16_t i = 0; i < N_INPUTS; i++)
+    input->data.f[i] = input_data[i];
   // Print the quantized input value
   // printf("x_quantized: %d\n", input->data.int8[0]);
 
   // Run inference, and report any error
   TfLiteStatus invoke_status = interpreter->Invoke();
   if (invoke_status != kTfLiteOk) {
-    return;
+    return 0;
   }
 
   // // Obtain the quantized output from model's output tensor
@@ -90,14 +90,13 @@ void TFLiteClassifier::classify(const float* input_data, float* output_data) {
   // printf("y_quantized: %d\n", y_quantized);
   // // Dequantize the output from integer to floating-point
   // float y = (y_quantized - output->params.zero_point) * output->params.scale;
-
-  float y = output->data.f[0];
+  for (uint16_t i = 0; i < N_OUTPUTS; i++)
+    outputs[i] = output->data.f[i];
 
   // Output the results. A custom HandleOutput function can be implemented
   // for each supported hardware target.
 
   // Increment the inference_counter, and reset it if we have reached
   // the total number per cycle
-  inference_count += 1;
-  if (inference_count >= kInferencesPerCycle) inference_count = 0;
+  return getClassificationResult();
 }

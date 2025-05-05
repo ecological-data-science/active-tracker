@@ -7,16 +7,6 @@
 #include "tflite_classifier.h"
 #include <stdio.h>
 
-// class for the classifier
-#define N_CHANNELS 5
-#define SEG_LENGTH 50
-
-
-#define BIT_LENGTH 4        // we write 4 predictions to a single byte as we need 2 bits per prediction
-#define SERIES_LENGTH 45    // each byte is 40 seconds (4 predictions x 10s per prediction) 30 minutes is 45 bytes
-
-#define N_INPUTS SEG_LENGTH*N_CHANNELS
-#define N_OUTPUTS 4
 
 typedef struct
 {

@@ -49,12 +49,10 @@ bool Classifier::update() {
   segment_counter++;
   if (segment_counter == SEG_LENGTH) {
 
-    const float input[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float output[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 
-    tflite.classify(input, output);
+    int activity = tflite.classify(predict_data);
+    printf("Activity: %d\n", activity);
     // TODO: predict here tf.predict(predict_data, prediction);
-    int activity = 0; // tf.probaToClass(prediction);
     segment_counter = 0;
 
     // set so that the first entry goes into the most significant bit and we
