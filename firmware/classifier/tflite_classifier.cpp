@@ -1,7 +1,11 @@
 
 #include "tflite_classifier.h"
+#include "tf_model.h"
 
 TFLiteClassifier::TFLiteClassifier() {
+}
+
+void TFLiteClassifier::begin() {
   printf("starting setup\n");
   tflite::InitializeTarget();
   printf("target initialized\n");
@@ -17,11 +21,13 @@ TFLiteClassifier::TFLiteClassifier() {
 
   // This pulls in all the operation implementations we need.
   // NOLINTNEXTLINE(runtime-global-variables)
-  static tflite::MicroMutableOpResolver<1> resolver;
+  static tflite::MicroMutableOpResolver<6> resolver;
   resolver.AddFullyConnected();
   resolver.AddRelu();
   resolver.AddMaxPool2D();
   resolver.AddConv2D();
+  resolver.AddReshape();
+  resolver.AddSoftmax();
 
   // Build an interpreter to run the model with.
   static tflite::MicroInterpreter static_interpreter(

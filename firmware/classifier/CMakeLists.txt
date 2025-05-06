@@ -4,7 +4,6 @@ add_library(classifier
     classifier.cpp
     imu.cpp
     tflite_classifier.cpp
-    hello_world_float_model_data.cpp
 )
 
 # Link against dependencies

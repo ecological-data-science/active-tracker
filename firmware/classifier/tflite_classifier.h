@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include "tf_model.h"
 
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_log.h"
@@ -26,6 +25,7 @@ public:
     ~TFLiteClassifier();
 
     int classify(const float* input);
+    void begin();
 
 private:
     // Model data
@@ -35,7 +35,7 @@ private:
     TfLiteTensor* output;
 
     // Tensor arena
-    static constexpr int kTensorArenaSize = 2 * 1024;
+    static constexpr int kTensorArenaSize = 4 * 1024;
     uint8_t tensor_arena[kTensorArenaSize];
 
     // Inference count

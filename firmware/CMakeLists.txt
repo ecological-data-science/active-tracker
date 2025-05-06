@@ -11,6 +11,17 @@ set(PICO_SDK_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/pico-sdk)
 set(PICO_SDK_INIT_CMAKE_FILE ${PICO_SDK_PATH}/pico_sdk_init.cmake)
 include(${PICO_SDK_INIT_CMAKE_FILE})
 
+set(PICO_EXTRAS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/pico-extras" CACHE PATH "Path to the PICO EXTRAS")
+
+get_filename_component(PICO_EXTRAS_PATH "${PICO_EXTRAS_PATH}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
+if (NOT EXISTS ${PICO_EXTRAS_PATH})
+    message(FATAL_ERROR "Directory '${PICO_EXTRAS_PATH}' not found")
+endif ()
+
+set(PICO_EXTRAS_PATH ${PICO_EXTRAS_PATH} CACHE PATH "Path to the PICO EXTRAS" FORCE)
+
+add_subdirectory(${PICO_EXTRAS_PATH} pico_extras)
+
 # Set project name
 project(pico_tracker C CXX ASM)
 
@@ -24,13 +35,15 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/pico-tflmicro EXCLUDE_FROM
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/gps)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/classifier)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lowpower)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/storage)
 
 add_executable(pico_tracker
             main.cpp
 )
 
 # pull in common dependencies
-target_link_libraries(pico_tracker pico_stdlib hardware_i2c gps classifier)
+target_link_libraries(pico_tracker pico_stdlib hardware_i2c hardware_sleep gps classifier lowpower storage)
 
 target_include_directories(pico_tracker
     PRIVATE

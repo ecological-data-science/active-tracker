@@ -37,16 +37,19 @@ bool Classifier::begin(i2c_inst_t *i2c) {
     
   acc_bias[2] = pow( ax*ax + ay*ay + az*az,0.5) ;
   filter.setup( ax,ay,az);     
+
+  // initialize the tflite classifier
+  tflite.begin();
   return true;
 }
 
 bool Classifier::update() {
   if (absolute_time_diff_us(imu_last_check_time, get_absolute_time()) < imu_interval_ms * 1000)
     return true;
-  update_imu(&predict_data[segment_counter * N_CHANNELS]);
-  printf("Segment counter: %d\n", segment_counter);
+  // printf("Segment counter: %d, Time: %llu ms\n", segment_counter, to_ms_since_boot(get_absolute_time()));
   imu_last_check_time = get_absolute_time();
   segment_counter++;
+  update_imu(&predict_data[segment_counter * N_CHANNELS]);
   if (segment_counter == SEG_LENGTH) {
 
 

@@ -25,7 +25,7 @@ private:
   absolute_time_t gps_start_time;
 
   uint32_t gps_run_time = 1000 * 60 * 10; // GPS will run for up to 10 minutes to get a fix
-  uint32_t gps_check_interval_ms = 1000; // 1 second interval
+  uint32_t gps_check_interval_ms = 1000 * 10; // 10 second interval
 
 };
 

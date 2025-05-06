@@ -2,56 +2,38 @@
 
 #include "main.h"
 
-
 // TODO: implement the following classes
 GPS gps;
-// Storage storage;
+Storage storage;
 Classifier classifier;
 // Lora lora;
-// LowPower lowPower;
 
 bool GPS_ACTIVE = false;
 bool IMU_ACTIVE = false;
 bool LORA_ACTIVE = false;
 
-
-unsigned long gps_run_time = 1000*60*10;  // gps will run for up to 10 minutes to get a fix
-unsigned long lora_run_time = 1000*60*20; // lora will broadcast for up to 20 minutes every hour
-
-
-unsigned long gps_check_interval = 60*1000; // check the gps fix every minute  
-unsigned long gps_last_check_time = 0;  
-
-unsigned long start_time = 0;  
-unsigned long lora_start_time = 0; 
-
-unsigned int imu_count;
 // location_reading latest_location;
 
-int main() 
-{
+int main() {
   // begin the watchdog timer
   bool success = setup();
-  if (!success) 
-  {
+  if (!success) {
     printf("Setup failed\n");
     // sleep for 1 minute to allow the watchdog to reset
-    sleep_ms(60*1000);
+    sleep_ms(60 * 1000);
   }
-  while (true) 
-  {
+  while (true) {
     main_loop();
   }
 }
 
-bool setup() 
-{
+bool setup() {
   stdio_init_all();
   sleep_ms(5000);
   printf("Starting setup ...\n");
 
   // initialize I2C using the default pins
-  i2c_init(i2c0, 100 * 1000); // 100 kHz
+  i2c_init(i2c0, 400 * 1000); // 100 kHz
 
   gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
@@ -59,95 +41,88 @@ bool setup()
   gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
 
   // initialize the GPS
-  if (!gps.begin(i2c0)) 
-  {
+  if (!gps.begin(i2c0)) {
     printf("GPS initialization failed\n");
     return false;
   }
 
-  // initialize the RTC
-  if (!classifier.begin(i2c0)) 
-  {
+  // initialize the classifier
+  if (!classifier.begin(i2c0)) {
     printf("classifier initialization failed\n");
     return false;
   }
 
-  // initialize the classifier
+  if (!storage.begin()) {
+    printf("storage initialization failed\n");
+    return false;
+  }
+
 
   // initialize the lora communication
 
   // flash the LED to indicate success
 
   // turn off all LEDs
+  turn_off_all_leds();
 
   printf("Setup complete\n");
 
   return true;
-
 }
 
+void main_loop() {
 
+  printf("going to sleep for 10 seconds\n");
+  enter_low_power_mode_ms(10000);
+  if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
 
+    // // if nothing active then we are at the top of the hour so wake up the
+    // gps and imu and start the watchdog gps.activate(); classifier.activate();
+    // wdt.start();
 
+    GPS_ACTIVE = true;
+    IMU_ACTIVE = true;
+  }
 
+  if (GPS_ACTIVE)
+    GPS_ACTIVE = gps.update();
 
+  if (IMU_ACTIVE)
+    IMU_ACTIVE = classifier.update();
 
+  if ((!IMU_ACTIVE) && (!LORA_ACTIVE)) {
+    // lora.activate();
+    LORA_ACTIVE = true;
+  }
 
+  // if (LORA_ACTIVE)
+  //   LORA_ACTIVE = lora.update();
 
+  // wdt.clear();
 
+  if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
 
-void main_loop() 
-{
-  
-    if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE))
-    {
+    // wdt.setup(WDT_OFF);  //watchdog
 
-      // // if nothing active then we are at the top of the hour so wake up the gps and imu and start the watchdog
-      // gps.activate();
-      // classifier.activate();
-      // wdt.start();
-
-      GPS_ACTIVE=true;
-      IMU_ACTIVE=true;
-
-    }
-
-
-    if (GPS_ACTIVE)
-      GPS_ACTIVE = gps.update();
-
-    if (IMU_ACTIVE)
-      IMU_ACTIVE = classifier.update();
-
-
-    if ((!IMU_ACTIVE) && (!LORA_ACTIVE))
-    {
-      // lora.activate();
-      LORA_ACTIVE=true;
-    }
-    
-    // if (LORA_ACTIVE)
-    //   LORA_ACTIVE = lora.update();
-
-    // wdt.clear();
-
-    if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {      
-      
-
-      
-      //wdt.setup(WDT_OFF);  //watchdog 
-
-      // lowPower.activate(); 
-      
-    }
-
-   
-  
-
-
-    
+    // lowPower.activate();
+  }
 }
 
+static void turn_off_all_leds() {
+  // Initialize the RGB LED pins as outputs
+  gpio_init(18);
+  gpio_init(19);
+  gpio_init(20);
 
+  // Set them as outputs
+  gpio_set_dir(18, GPIO_OUT);
+  gpio_set_dir(19, GPIO_OUT);
+  gpio_set_dir(20, GPIO_OUT);
 
+  // Turn off all LEDs (they are active low, so set them high to turn off)
+  gpio_put(18, 1);
+  gpio_put(19, 1);
+  gpio_put(20, 1);
 
+  printf("All LEDs turned off\n");
+}

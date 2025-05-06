@@ -7,12 +7,8 @@
 #include "tflite_classifier.h"
 #include <stdio.h>
 
+#include "data_structs.h"
 
-typedef struct
-{
-      long start_time;
-      uint8_t activities[45];
-}  activity_reading;
 
 
 
