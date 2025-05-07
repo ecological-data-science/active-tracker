@@ -13,25 +13,25 @@
 class Storage {
 public:
   bool begin();
-  void set_latest_message(location_reading location);
-  void store_latest_message();
-  void send_successful();
-  bool anything_to_send();
-  bool pending_archive = false;
-  uint8_t message_buffer[12];
+  void archive_latest_message();
+  void set_latest_message(location_reading location, activity_reading activities);
+  void location_send_successful();
+  void activity_send_successful();
+  bool anything_to_send(bool nightmode);
+  bool new_message = false;
+  combined_reading get_current_reading();
 
 private:
   const char *devNonce = "/counters/dev_nonce_counter.bin";
   const char *sendCounter = "/counters/send_counter.bin";
   const char *dataFile = "/data/telemetry.bin";
-  int size_of_location = 12;
+  uint8_t message_buffer[SIZE_OF_RECORD];
+  combined_reading current_reading;
 
-  int record_size = 12;
+  int record_size = SIZE_OF_RECORD;
 
-  uint8_t last_record_sent = 0;
+  uint32_t last_record_sent = 0; 
 
-  uint16_t currentSectorIndex;
-  uint16_t currentRecordIndex;
 
   // LittleFS instance and configuration
   lfs_t lfs;

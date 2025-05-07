@@ -59,6 +59,10 @@ bool setup() {
 
 
   // initialize the lora communication
+  if (!lora.begin(&storage)) {
+    printf("Lora initialization failed\n");
+    return false;
+  }
 
   // flash the LED to indicate success
 
@@ -77,7 +81,9 @@ void main_loop() {
   if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
 
     // // if nothing active then we are at the top of the hour so wake up the
-    // gps and imu and start the watchdog gps.activate(); classifier.activate();
+    // gps and imu and start the watchdog 
+    gps.activate(); 
+    classifier.activate(100); // TODO - add the startup time to the classifier
     // wdt.start();
 
     GPS_ACTIVE = true;
@@ -91,12 +97,13 @@ void main_loop() {
     IMU_ACTIVE = classifier.update();
 
   if ((!IMU_ACTIVE) && (!LORA_ACTIVE)) {
-    // lora.activate();
+    storage.set_latest_message(gps.get_location(), classifier.get_activity());
+    lora.activate(gps.getNightMode());
     LORA_ACTIVE = true;
   }
 
-  // if (LORA_ACTIVE)
-  //   LORA_ACTIVE = lora.update();
+  if (LORA_ACTIVE)
+     LORA_ACTIVE = lora.update();
 
   // wdt.clear();
 

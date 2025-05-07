@@ -26,6 +26,7 @@ public:
   bool begin(i2c_inst_t *i2c);
   bool update();
   void activate();
+  activity_reading get_activity();
 
 private:
   sensors_event_t accel;

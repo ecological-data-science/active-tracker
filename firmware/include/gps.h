@@ -18,14 +18,16 @@ public:
   bool begin(i2c_inst_t *i2c);
   bool update();
   void activate();
+  location_reading get_location();
 private:
   void deactivate();
-
+  location_reading latest_location;
   absolute_time_t gps_last_check_time;
   absolute_time_t gps_start_time;
 
   uint32_t gps_run_time = 1000 * 60 * 10; // GPS will run for up to 10 minutes to get a fix
   uint32_t gps_check_interval_ms = 1000 * 10; // 10 second interval
+  bool nightmode = false;
 
 };
 

@@ -64,12 +64,29 @@ bool GPS::update() {
   }
   if (fixValid) {
     // TODO save the fix data to a file 
+    latest_location.start_time = getUnixTime();
+    latest_location.lat = getLatitude() / 1e7;
+    latest_location.lon = getLongitude() / 1e7;
+    int hour = getHour();
+    // check if daylight
+    if (hour >= 6 && hour < 18) {
+      nightmode = false;
+    } else {
+      nightmode = true;
+    }
+
     deactivate();
     return false;
   }
   return true;
 }
 
+location_reading GPS::get_location() {
+  return latest_location;
+}
+bool GPS::getNightMode() {
+  return nightmode; 
+}
 void GPS::activate() {
   printf("-- waking up GPS module via pin %d on your microcontroller --\n",
          WAKEUP_PIN);
