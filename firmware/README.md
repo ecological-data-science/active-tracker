@@ -51,7 +51,7 @@ firmware/
    git submodule update --init --recursive
    ```
 
-   ```
+   
 
 ### Compilation
 
