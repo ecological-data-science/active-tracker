@@ -4,7 +4,7 @@
 
 LoraMessage::LoraMessage() {
     _currentSize = 0;
-    _buffer = (byte*) malloc(_currentSize);
+    _buffer = (uint8_t*) malloc(_currentSize);
 }
 
 LoraMessage::~LoraMessage() {
@@ -12,13 +12,13 @@ LoraMessage::~LoraMessage() {
 }
 
 LoraEncoder LoraMessage::_reallocBuffer(int delta) {
-    void* temp = realloc(_buffer, (_currentSize + delta) * sizeof(byte));
+    void* temp = realloc(_buffer, (_currentSize + delta) * sizeof(uint8_t));
     if (temp == NULL) {
         free(_buffer);
         printf("bad memory allocation!");
         while(true);
     } else {
-        _buffer = (byte*) temp;
+        _buffer = (uint8_t*) temp;
     }
     LoraEncoder encoder(_buffer + _currentSize);
     _currentSize += delta;
@@ -74,6 +74,6 @@ int LoraMessage::getLength() {
     return _currentSize;
 }
 
-byte* LoraMessage::getBytes() {
+uint8_t* LoraMessage::getBytes() {
     return _buffer;
 }

@@ -17,12 +17,12 @@ public:
   bool send_message(LoraMessage message);
 
   bool session_success = false;
-  void activate();
+  void activate(bool _nightmode);
   void deactivate();
 
 private:
-  void sendQuery(String atstring);
-  int sendCommand(String atstring);
+  void sendQuery(const char* atstring);
+  int sendCommand(const char* atstring);
   int attempt_counter;
   int max_attempts = 10;
   Storage *storage;
@@ -33,6 +33,6 @@ private:
   uint32_t lora_run_time = 1000 * 60 * 20; // LoRa will run for up to 20 minutes
 
   bool nightmode = false;
-  String WBEEST_APP_KEY = "434F4C494E5357494C44454245455354";
+  const char* WBEEST_APP_KEY = "434F4C494E5357494C44454245455354";
 };
 

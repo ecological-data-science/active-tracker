@@ -37,13 +37,14 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/gps)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/classifier)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lowpower)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/storage)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lora)
 
 add_executable(pico_tracker
             main.cpp
 )
 
 # pull in common dependencies
-target_link_libraries(pico_tracker pico_stdlib hardware_i2c hardware_sleep gps classifier lowpower storage)
+target_link_libraries(pico_tracker pico_stdlib hardware_i2c hardware_sleep gps classifier lowpower storage lora)
 
 target_include_directories(pico_tracker
     PRIVATE

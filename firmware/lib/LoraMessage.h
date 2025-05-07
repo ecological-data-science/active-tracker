@@ -2,7 +2,7 @@
 #define _LORA_MESSAGE_H_
 
 #include <stdint.h>
-typedef uint8_t byte;
+#include <cstdio>
 
 #include "LoraEncoder.h"
 
@@ -19,11 +19,11 @@ class LoraMessage {
         LoraMessage& addHumidity(float humidity);
         LoraMessage& addBitmap(bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool h);
         LoraMessage& addRawFloat(float value);
-        byte* getBytes();
+        uint8_t* getBytes();
         int getLength();
     private:
         LoraEncoder _reallocBuffer(int delta);
-        byte* _buffer;
+        uint8_t* _buffer;
         int _currentSize;
 };
 

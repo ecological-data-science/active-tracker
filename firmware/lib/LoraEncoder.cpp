@@ -27,14 +27,14 @@
 
 #include "LoraEncoder.h"
 
-LoraEncoder::LoraEncoder(byte *buffer) {
+LoraEncoder::LoraEncoder(uint8_t *buffer) {
   _buffer = buffer;
   _offset = 0;
 }
 
-void LoraEncoder::_intToBytes(byte *buf, int32_t i, uint8_t byteSize) {
+void LoraEncoder::_intToBytes(uint8_t *buf, int32_t i, uint8_t byteSize) {
     for(uint8_t x = 0; x < byteSize; x++) {
-        buf[x] = (byte) (i >> (x*8));
+        buf[x] = (uint8_t) (i >> (x*8));
     }
 }
 
@@ -84,8 +84,8 @@ void LoraEncoder::writeTemperature(float temperature) {
         t = ~-t;
         t = t + 1;
     }
-    _buffer[_offset  ] = (byte) ((t >> 8) & 0xFF);
-    _buffer[_offset+1] = (byte) t & 0xFF;
+    _buffer[_offset  ] = (uint8_t) ((t >> 8) & 0xFF);
+    _buffer[_offset+1] = (uint8_t) t & 0xFF;
     _offset += 2;
 }
 

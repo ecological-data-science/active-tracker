@@ -13,6 +13,7 @@
 #include "classifier.h"
 #include "lowpower.h"
 #include "storage.h"
+#include "lora.h"
 
 bool setup();
 void main_loop();

@@ -29,11 +29,10 @@
 #define _LORA_ENCODER_H_
 
 #include <stdint.h>
-typedef uint8_t byte;
 
 class LoraEncoder {
     public:
-        LoraEncoder(byte *buffer);
+        LoraEncoder(uint8_t *buffer);
         void writeUnixtime(uint32_t unixtime);
         void writeLatLng(double latitude, double longitude);
         void writeUint16(uint16_t i);
@@ -45,9 +44,9 @@ class LoraEncoder {
         void writeRawFloat(float value);
         int getLength(void);
     private:
-        byte* _buffer;
+        uint8_t* _buffer;
         int _offset;
-        void _intToBytes(byte *buf, int32_t i, uint8_t byteSize);
+        void _intToBytes(uint8_t *buf, int32_t i, uint8_t byteSize);
 };
 
 #endif

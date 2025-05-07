@@ -6,7 +6,7 @@
 GPS gps;
 Storage storage;
 Classifier classifier;
-// Lora lora;
+Lora lora;
 
 bool GPS_ACTIVE = false;
 bool IMU_ACTIVE = false;

@@ -73,7 +73,10 @@ bool Lora::update() {
 
   if (location_sent) {
     if (!current_reading.partially_sent)
-      storage->send_location_successful();
+    {
+      attempt_counter = max_attempts;
+      storage->location_send_successful();
+    }
     LoraMessage a_message;
 
     a_message.addUnixtime(current_reading.activity.start_time);
@@ -84,7 +87,8 @@ bool Lora::update() {
   }
 
   if (activity_sent) {
-    storage->send_activity_successful();
+    attempt_counter = max_attempts;
+    storage->activity_send_successful();
   } else {
     // if we get here then we have not sent a message
     // but we have successfully sent one this session
@@ -122,10 +126,10 @@ bool Lora::update() {
     return false;
   }
 
-    return true
-  }
+  return true;
+}
 
-  bool Lora::join() {
+bool Lora::join() {
 
     bool joined = false;
 
@@ -164,9 +168,9 @@ bool Lora::update() {
 
     joined = true;
     return joined;
-  }
+}
 
-  bool Lora::send_message(LoraMessage message) {
+bool Lora::send_message(LoraMessage message) {
 
     printf("sending message");
     //
@@ -240,7 +244,7 @@ bool Lora::update() {
 
   void Lora::activate(bool _nightmode) {
 
-    attempt_count = max_attempts;
+    attempt_counter = max_attempts;
 
     lora_start_time = get_absolute_time();
     nightmode = _nightmode;
@@ -258,9 +262,9 @@ bool Lora::update() {
     //   lora_active=true;
     //   delay(500);
     //   return;
-    // }
+  }
     //
-    // void Lora::deactivate() {
+     void Lora::deactivate() {
     //
     //   if (lora_active==false)
     //     return;
@@ -274,10 +278,9 @@ bool Lora::update() {
     //   delay(500);
     //
     //   return;
-    // }
+     }
     //
-    // void Lora::sendQuery(String atstring)
-    // {
+  void Lora::sendQuery(const char* atstring) {
     //
     //   Serial.print("Sending query: ");
     //   Serial.println(atstring);
@@ -300,7 +303,7 @@ bool Lora::update() {
     //   delay(500);
   }
 
-  int Lora::sendCommand(String atstring) {
+  int Lora::sendCommand(const char* atstring) {
     int modem_status = 0;
 
     // Serial.print("Sending command: ");
