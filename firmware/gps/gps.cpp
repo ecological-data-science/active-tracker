@@ -6,6 +6,8 @@ bool GPS::begin(i2c_inst_t *i2c) {
   uint16_t maxWait = kUBLOXGNSSDefaultMaxWait;
   bool assumeSuccess = false;
 
+  rtc_init();
+
   gpio_init(WAKEUP_PIN);
   gpio_set_dir(WAKEUP_PIN, GPIO_OUT);
   gpio_put(WAKEUP_PIN, 0);
@@ -55,31 +57,81 @@ bool GPS::update() {
     printf("No PVT data available\n");
   }
 
-  if (absolute_time_diff_us(gps_start_time, get_absolute_time()) >=
-      gps_run_time * 1000) {
-    // Time to stop GPS
-    printf("GPS run time exceeded, stopping GPS\n");
+  if (fixValid) {
+    latest_location.start_time = getUnixEpoch();
+    setRTCfromUnixEpoch(latest_location.start_time);
+    latest_location.lat = getLatitude() / 1e7;
+    latest_location.lon = getLongitude() / 1e7;
+
+    setNightMode();
     deactivate();
     return false;
   }
-  if (fixValid) {
-    // TODO save the fix data to a file 
-    latest_location.start_time = getUnixEpoch();
-    latest_location.lat = getLatitude() / 1e7;
-    latest_location.lon = getLongitude() / 1e7;
-    int hour = getHour();
-    // check if daylight
-    if (hour >= 6 && hour < 18) {
-      nightmode = false;
-    } else {
-      nightmode = true;
-    }
 
+  if (absolute_time_diff_us(gps_start_time, get_absolute_time()) >= gps_run_time * 1000) {
+    latest_location.start_time = getUnixEpochfromRTC();
+    latest_location.lat = 0.0f;
+    latest_location.lon = 0.0f;
+
+    setNightMode();
     deactivate();
     return false;
   }
   return true;
 }
+
+void GPS::setNightMode() {
+    // Set night mode based on the given Unix epoch time
+    time_t time = (time_t)latest_location.start_time;
+    struct tm *utc_time = gmtime(&time);  
+    int hour = utc_time->tm_hour;
+    
+    // check if daylight
+    if (hour >= 6 && hour < 18) {
+        nightmode = false;
+    } else {
+        nightmode = true;
+    }
+}
+uint32_t GPS::getUnixEpochfromRTC() {
+    // Get the current time from the RTC
+    datetime_t dt;
+    rtc_get_datetime(&dt);
+    
+    // Convert to tm structure
+    struct tm timeinfo;
+    timeinfo.tm_year = dt.year - 1900;  // tm_year is years since 1900
+    timeinfo.tm_mon = dt.month - 1;     // tm_mon is 0-11
+    timeinfo.tm_mday = dt.day;
+    timeinfo.tm_hour = dt.hour;
+    timeinfo.tm_min = dt.min;
+    timeinfo.tm_sec = dt.sec;
+    timeinfo.tm_isdst = -1;             // Let mktime determine DST status
+    
+    // Convert to Unix epoch time
+    time_t unix_time = mktime(&timeinfo);
+    return (uint32_t)unix_time;
+}
+
+void GPS::setRTCfromUnixEpoch(uint32_t unix_time) {
+    // Set the RTC time to the given Unix epoch time
+    time_t time = (time_t)unix_time;
+    struct tm *timeinfo = gmtime(&time);  
+    
+    // Convert to datetime_t structure
+    datetime_t dt;
+    dt.year = timeinfo->tm_year + 1900;
+    dt.month = timeinfo->tm_mon + 1;
+    dt.day = timeinfo->tm_mday;
+    dt.hour = timeinfo->tm_hour;
+    dt.min = timeinfo->tm_min;
+    dt.sec = timeinfo->tm_sec;
+    dt.dotw = timeinfo->tm_wday;  // 0 is Sunday
+    
+    // Set the RTC
+    rtc_set_datetime(&dt);
+}
+
 
 location_reading GPS::get_location() {
   return latest_location;
@@ -96,7 +148,7 @@ void GPS::activate() {
   gpio_put(WAKEUP_PIN, 1); // Set HIGH
   sleep_ms(1000);
   gpio_put(WAKEUP_PIN, 0); // Set LOW
-    gps_last_check_time = 0; // Reset the last check time
+  gps_last_check_time = 0; // Reset the last check time
   gps_start_time = get_absolute_time();
   return;             // Implement activation logic if needed
 }

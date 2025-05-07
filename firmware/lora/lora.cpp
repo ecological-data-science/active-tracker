@@ -172,6 +172,7 @@ bool Lora::join() {
 
 bool Lora::send_message(LoraMessage message) {
 
+  watchdog_update();
     printf("sending message");
     //
     // Serial.println(message.getLength());

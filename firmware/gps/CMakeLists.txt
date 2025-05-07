@@ -8,6 +8,7 @@ add_library(gps
 target_link_libraries(gps 
     pico_stdlib 
     hardware_i2c
+    hardware_rtc
     i2cbus  # Add the sfe_bus library as a dependency
 )
 

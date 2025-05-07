@@ -2,6 +2,7 @@
 
 #include "LoraMessage.h" //https://github.com/thesolarnomad/lora-serialization
 #include "storage.h"
+#include "hardware/watchdog.h"
 
 #define ERR_NOT_JOINED -5
 #define ERR_ALREADY_JOINED -6

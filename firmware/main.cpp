@@ -83,11 +83,12 @@ void main_loop() {
     // // if nothing active then we are at the top of the hour so wake up the
     // gps and imu and start the watchdog 
     gps.activate(); 
-    classifier.activate(100); // TODO - add the startup time to the classifier
-    // wdt.start();
+    classifier.activate(gps.getUnixEpochfromRTC()); 
+    watchdog_enable(0x2000, 0);
 
     GPS_ACTIVE = true;
     IMU_ACTIVE = true;
+    start_time = get_absolute_time();
   }
 
   if (GPS_ACTIVE)
@@ -106,15 +107,39 @@ void main_loop() {
      LORA_ACTIVE = lora.update();
 
   // wdt.clear();
+  watchdog_update();
 
   if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
 
+    watchdog_disable();
+    sleep_until_next_hour_boundary(start_time);
     // wdt.setup(WDT_OFF);  //watchdog
 
     // lowPower.activate();
   }
 }
+void sleep_until_next_hour_boundary(absolute_time_t start_time) {
+    // calculate the time since we started the GPS/IMU in milliseconds
+    uint64_t elapsed_ms = absolute_time_diff_us(start_time, get_absolute_time()) / 1000;
 
+    // define the duration of one hour in milliseconds
+    uint64_t one_hour_ms = 60ULL * 60ULL * 1000ULL; // Use ULL suffix for uint64_t literals
+
+    // calculate how far into the current hour interval we are (relative to start_time)
+    uint64_t time_into_current_hour_ms = elapsed_ms % one_hour_ms;
+
+    // calculate how long until the next hour interval boundary
+    uint64_t sleep_duration_ms = one_hour_ms - time_into_current_hour_ms;
+
+    // If elapsed_ms is exactly a multiple of one_hour_ms, time_into_current_hour_ms is 0.
+    // sleep_duration_ms becomes one_hour_ms, which correctly means sleeping for the next full hour.
+
+    printf("Elapsed time relative to start: %llu ms\n", elapsed_ms);
+    printf("Time into current hour interval: %llu ms\n", time_into_current_hour_ms);
+    printf("Sleeping for %llu ms until next hour boundary relative to start_time\n", sleep_duration_ms);
+
+    enter_low_power_mode_ms(sleep_duration_ms);
+}
 static void turn_off_all_leds() {
   // Initialize the RGB LED pins as outputs
   gpio_init(18);
