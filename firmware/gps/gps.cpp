@@ -64,7 +64,7 @@ bool GPS::update() {
   }
   if (fixValid) {
     // TODO save the fix data to a file 
-    latest_location.start_time = getUnixTime();
+    latest_location.start_time = getUnixEpoch();
     latest_location.lat = getLatitude() / 1e7;
     latest_location.lon = getLongitude() / 1e7;
     int hour = getHour();

@@ -25,9 +25,6 @@
 
 */
 
-#if ARDUINO >= 100
-    #include "Arduino.h"
-#endif
 #include "LoraEncoder.h"
 
 LoraEncoder::LoraEncoder(byte *buffer) {

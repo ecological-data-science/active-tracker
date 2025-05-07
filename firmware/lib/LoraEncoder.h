@@ -28,12 +28,8 @@
 #ifndef _LORA_ENCODER_H_
 #define _LORA_ENCODER_H_
 
-#if ARDUINO >= 100
-    #include "Arduino.h"
-#else
-    #include <stdint.h>
-    typedef uint8_t byte;
-#endif
+#include <stdint.h>
+typedef uint8_t byte;
 
 class LoraEncoder {
     public:

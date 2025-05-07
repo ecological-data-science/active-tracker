@@ -4,6 +4,7 @@
 #include "gps_pico.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
+#include "data_structs.h"
 
 #define WAKEUP_PIN 7
 
@@ -19,6 +20,8 @@ public:
   bool update();
   void activate();
   location_reading get_location();
+  bool getNightMode();
+
 private:
   void deactivate();
   location_reading latest_location;

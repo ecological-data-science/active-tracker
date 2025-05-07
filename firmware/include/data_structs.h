@@ -23,8 +23,8 @@ typedef struct
 } combined_reading;
 
 
-#define SIZE_OF_LOCATION = 12; 
-#define SIZE_OF_ACTIVITY = 49;
-#define SIZE_OF_RECORD = SIZE_OF_LOCATION + SIZE_OF_ACTIVITY; // 12 + 49 = 61
+#define SIZE_OF_LOCATION  12 
+#define SIZE_OF_ACTIVITY  49
+#define SIZE_OF_RECORD  61 // 12 + 49 = 61
   
 
