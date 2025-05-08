@@ -3,6 +3,7 @@
 #include "LoraMessage.h" //https://github.com/thesolarnomad/lora-serialization
 #include "storage.h"
 #include "hardware/watchdog.h"
+#include "debug.h"
 
 #define ERR_NOT_JOINED -5
 #define ERR_ALREADY_JOINED -6
@@ -12,6 +13,8 @@ class Lora {
 public:
   bool begin(Storage *storage);
   bool update();
+  void wakeup();
+  void sleep();
 
   bool join();
   // bool start(location_reading message);

@@ -2,12 +2,27 @@
 
 #include "lora.h"
 
+void Lora::wakeup() {
+  // SerialLoRa.println("AT+WAKEUP");
+  // delay(500);
+  // SerialLoRa.flush();
+  // delay(500);
+}
+
+void Lora::sleep() {
+  // SerialLoRa.println("AT+SLEEP");
+  // delay(500);
+  // SerialLoRa.flush();
+  // delay(500);
+}
+
 bool Lora::begin(Storage *_storage) {
 
   storage = _storage;
 
-  // pinMode(LORA_IRQ_DUMB, OUTPUT);
-  // activate();
+  // TODO setup uart
+  wakeup();
+  // TODO set the device keys etc
   //
   // sendQuery("AT+VER?");
   // sendQuery("AT+DEVEUI?");
@@ -27,8 +42,9 @@ bool Lora::begin(Storage *_storage) {
   // sendQuery("AT+RTYNUM?");
   // sendQuery("AT+DELAY?");
   //
-  // join();
+  join();
 
+  sleep();
   return true;
 }
 
@@ -64,7 +80,7 @@ bool Lora::update() {
     location_sent = send_message(l_message);
 
   if (!join_success) {
-    printf("Not actually joined");
+      DEBUG_PRINT(("Not actually joined"));
     // if we get here then we thought we were joined but we are not
     // we return turn to keep lora active and in the next iteration
     // we will try to join again
@@ -97,7 +113,7 @@ bool Lora::update() {
 
   if (absolute_time_diff_us(lora_start_time, get_absolute_time()) >=
       lora_run_time * 1000) {
-    printf("lora run time exceeded, stopping lora\n");
+    DEBUG_PRINT(("lora run time exceeded, stopping lora\n"));
     if (!activity_sent) {
       // if we have not sent a message then we need to archive the
       // latest message
@@ -108,7 +124,7 @@ bool Lora::update() {
   }
 
   if (attempt_counter == 0){
-    printf("lora attempts exceeded, stopping lora\n");
+    DEBUG_PRINT(("lora attempts exceeded, stopping lora\n"));
     if (!activity_sent) {
       // if we have not sent a message then we need to archive the
       // latest message
@@ -121,7 +137,7 @@ bool Lora::update() {
   bool send_needed = storage->anything_to_send(nightmode);
 
   if (!send_needed) {
-    printf("no messages to send, stopping lora\n");
+    DEBUG_PRINT(("no messages to send, stopping lora\n"));
     deactivate();
     return false;
   }
@@ -133,7 +149,7 @@ bool Lora::join() {
 
     bool joined = false;
 
-    printf("attempting to join..");
+    DEBUG_PRINT(("attempting to join.."));
 
     // int modem_status = sendCommand("AT+JOIN");
     // if (modem_status==MODEM_OK) // join request sent
@@ -166,28 +182,35 @@ bool Lora::join() {
     //   joined = true;
     //
 
+    // TODO: implement join code
     joined = true;
     return joined;
 }
 
 bool Lora::send_message(LoraMessage message) {
 
-  watchdog_update();
-    printf("sending message");
+    watchdog_update();
+    DEBUG_PRINT(("sending message"));
     //
     // Serial.println(message.getLength());
     bool message_sent = false;
-    //
-    // // location messages are length 12 and go to port 3
-    // // activity messages are length 49 and go to port 5
-    // if (message.getLength()==12)
-    // {
+
+    // location messages are length 12 and go to port 3
+    // activity messages are length 49 and go to port 5
+  combined_reading current_reading = storage->get_current_reading(); // TODO remove and replace with lora send logic
+    if (message.getLength()==12)
+    {
+
+      DEBUG_PRINT(("sending location message: time %lu, lat %f, lon %f\n",
+                   current_reading.location.start_time, current_reading.location.lat, current_reading.location.lon));
     //   SerialLoRa.print("AT+PCTX 3,");
-    // }
-    // else
-    // {
+    }
+    else
+    {
+      DEBUG_PRINT(("sending activity message: time %lu, activity %d\n",
+                   current_reading.activity.start_time, current_reading.activity.activities[0]));
     //   SerialLoRa.print("AT+PCTX 5,");
-    // }
+    }
     // SerialLoRa.print(message.getLength());
     // SerialLoRa.print("\r");
     // SerialLoRa.write(message.getBytes(),message.getLength());
@@ -249,6 +272,7 @@ bool Lora::send_message(LoraMessage message) {
 
     lora_start_time = get_absolute_time();
     nightmode = _nightmode;
+    wakeup();
     //   if (lora_active==true)
     //     return;
     //   SerialLoRa.begin(19200);
@@ -266,6 +290,7 @@ bool Lora::send_message(LoraMessage message) {
   }
     //
      void Lora::deactivate() {
+        sleep();
     //
     //   if (lora_active==false)
     //     return;

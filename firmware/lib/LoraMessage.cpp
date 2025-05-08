@@ -15,7 +15,6 @@ LoraEncoder LoraMessage::_reallocBuffer(int delta) {
     void* temp = realloc(_buffer, (_currentSize + delta) * sizeof(uint8_t));
     if (temp == NULL) {
         free(_buffer);
-        printf("bad memory allocation!");
         while(true);
     } else {
         _buffer = (uint8_t*) temp;

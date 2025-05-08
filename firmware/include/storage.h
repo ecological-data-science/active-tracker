@@ -7,7 +7,7 @@
 #include "lfs.h"
 #include "pico_lfs_hal.h"
 #include "pico_lfs.h"
-
+#include "debug.h"
 #include "data_structs.h"
 
 class Storage {

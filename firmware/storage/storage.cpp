@@ -13,7 +13,7 @@ bool Storage::begin() {
     err = lfs_mount(&lfs, &cfg);
   }
   if (err) {
-    printf("Failed to mount LittleFS");
+        DEBUG_PRINT(("Failed to mount LittleFS"));
     return false;
   }
 
@@ -21,7 +21,7 @@ bool Storage::begin() {
     // File doesn't exist, create it
     if (lfs_file_open(&lfs, &file, dataFile, LFS_O_WRONLY | LFS_O_CREAT) !=
         LFS_ERR_OK) {
-      printf("Failed to open file for writing");
+        DEBUG_PRINT(("Failed to open file for writing"));
       return false;
     }
     lfs_file_close(&lfs, &file);
@@ -33,7 +33,7 @@ bool Storage::begin() {
     // File doesn't exist, create it
     if (lfs_file_open(&lfs, &file, devNonce, LFS_O_WRONLY | LFS_O_CREAT) !=
         LFS_ERR_OK) {
-      printf("Failed to open file for writing");
+        DEBUG_PRINT(("Failed to open file for writing"));
       return false;
     }
     uint32_t dev_nonce = 0;
@@ -47,7 +47,7 @@ bool Storage::begin() {
     // File doesn't exist, create it
     if (lfs_file_open(&lfs, &file, sendCounter, LFS_O_WRONLY | LFS_O_CREAT) !=
         LFS_ERR_OK) {
-      printf("Failed to open file for writing");
+        DEBUG_PRINT(("Failed to open file for writing"));
       return false;
     }
     uint32_t send_counter = 0;
@@ -57,12 +57,12 @@ bool Storage::begin() {
     // Read the send counter
     if (lfs_file_read(&lfs, &file, &last_record_sent,
                       sizeof(last_record_sent)) != sizeof(last_record_sent)) {
-      printf("Failed to read send counter");
+        DEBUG_PRINT(("Failed to read send counter"));
       lfs_file_close(&lfs, &file);
       return false;
     }
     lfs_file_close(&lfs, &file);
-    printf("Last record sent: %d\n", last_record_sent);
+        DEBUG_PRINT(("Last record sent: %d\n", last_record_sent));
   }
 
   return true;
@@ -83,7 +83,7 @@ void Storage::archive_latest_message() {
   // and it is still stored in the message_buffer
   if (lfs_file_open(&lfs, &file, dataFile, LFS_O_WRONLY | LFS_O_APPEND) !=
       LFS_ERR_OK) {
-    printf("file open failed");
+        DEBUG_PRINT(("file open failed"));
     return;
   }
 
@@ -110,7 +110,7 @@ bool Storage::anything_to_send(bool nightmode) {
   }
 
   if (lfs_file_open(&lfs, &file, dataFile, LFS_O_RDONLY) != LFS_ERR_OK) {
-    printf("file open failed");
+        DEBUG_PRINT(("file open failed"));
     return false;
   }
 
@@ -138,14 +138,14 @@ void Storage::location_send_successful() {
   }
   
   if (lfs_file_open(&lfs, &file, dataFile, LFS_O_WRONLY) != LFS_ERR_OK) {
-    printf("Failed to open data file for updating record %lu\n", last_record_sent);
+        DEBUG_PRINT(("Failed to open data file for updating record %lu\n", last_record_sent));
     return;
   }
 
   // Seek to the position of the current archived record
   lfs_soff_t seek_pos = (lfs_soff_t)last_record_sent * record_size;
   if (lfs_file_seek(&lfs, &file, seek_pos, LFS_SEEK_SET) < 0) {
-    printf("Failed to seek to record %lu for update\n", last_record_sent);
+        DEBUG_PRINT(("Failed to seek to record %lu for update\n", last_record_sent));
     lfs_file_close(&lfs, &file);
     return;
   }
@@ -155,7 +155,7 @@ void Storage::location_send_successful() {
 
   // Write the buffer back to the file at the correct position
   if (lfs_file_write(&lfs, &file, message_buffer, record_size) != record_size) {
-    printf("Failed to write updated record %lu to archive\n", last_record_sent);
+        DEBUG_PRINT(("Failed to write updated record %lu to archive\n", last_record_sent));
   }
 
   lfs_file_close(&lfs, &file);
@@ -173,12 +173,12 @@ void Storage::activity_send_successful() {
 
   // Save the updated send counter to the file
   if (lfs_file_open(&lfs, &file, sendCounter, LFS_O_WRONLY | LFS_O_TRUNC) != LFS_ERR_OK) {
-    printf("Failed to open send counter file for writing\n");
+        DEBUG_PRINT(("Failed to open send counter file for writing\n"));
     return;
   }
 
   if (lfs_file_write(&lfs, &file, &last_record_sent, sizeof(last_record_sent)) != sizeof(last_record_sent)) {
-    printf("Failed to write updated send counter\n");
+        DEBUG_PRINT(("Failed to write updated send counter\n"));
   }
 
   lfs_file_close(&lfs, &file);

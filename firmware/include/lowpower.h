@@ -5,7 +5,8 @@
 
 #include "pico/sleep.h"
 
-// class for sleep mode
+#include "uart.h"
+#include "debug.h"
 
 
 void enter_low_power_mode_ms(uint32_t sleep_time);

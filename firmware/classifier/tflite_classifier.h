@@ -8,6 +8,7 @@
 #include "tensorflow/lite/micro/system_setup.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
+#include "debug.h"
 // class for the classifier
 #define N_CHANNELS 5
 #define SEG_LENGTH 50
@@ -38,9 +39,7 @@ private:
     static constexpr int kTensorArenaSize = 4 * 1024;
     uint8_t tensor_arena[kTensorArenaSize];
 
-    // Inference count
-  int getClassificationResult();
-
+    int getClassificationResult();
 
     float *outputs;
 };

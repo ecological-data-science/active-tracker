@@ -1,5 +1,7 @@
 #pragma once
 
+#include "debug.h"
+
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
 #include "filter/imuFilter.h"

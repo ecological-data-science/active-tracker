@@ -2,10 +2,6 @@
 #include "lowpower.h"
 
     
-#define UART_ID uart0
-#define BAUD_RATE 9600
-#define UART_TX_PIN 0u
-#define UART_RX_PIN 1u
     
 bool awake = true;
 
@@ -26,7 +22,7 @@ void enter_low_power_mode_ms(uint32_t sleep_time)
     if (sleep_goto_sleep_for(sleep_time, &alarm_sleep_callback)) {
       // Make sure we don't wake
       while (!awake) {
-        printf("Should be sleeping\n");
+        DEBUG_PRINT(("LowPower: Should be sleeping\n"));
       }
     }
     // Re-enabling clock sources and generators.
@@ -40,7 +36,6 @@ void enter_low_power_mode_ms(uint32_t sleep_time)
 
 
 static void alarm_sleep_callback(uint alarm_id) {
-  printf("alarm woke us up\n");
   uart_default_tx_wait_blocking();
   awake = true;
   hardware_alarm_set_callback(alarm_id, NULL);

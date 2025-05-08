@@ -46,16 +46,12 @@ bool Classifier::begin(i2c_inst_t *i2c) {
 bool Classifier::update() {
   if (absolute_time_diff_us(imu_last_check_time, get_absolute_time()) < imu_interval_ms * 1000)
     return true;
-  // printf("Segment counter: %d, Time: %llu ms\n", segment_counter, to_ms_since_boot(get_absolute_time()));
   imu_last_check_time = get_absolute_time();
   segment_counter++;
   update_imu(&predict_data[segment_counter * N_CHANNELS]);
   if (segment_counter == SEG_LENGTH) {
-
-
     int activity = tflite.classify(predict_data);
-    printf("Activity: %d\n", activity);
-    // TODO: predict here tf.predict(predict_data, prediction);
+    DEBUG_PRINT(("Activity classification: %d", activity));
     segment_counter = 0;
 
     // set so that the first entry goes into the most significant bit and we
@@ -138,7 +134,7 @@ void Classifier::activate(long unixtime){
   imu_counter = 0;
   bit_counter = 0;
   segment_counter = 0;
-  return; // Implement activation logic if needed
+  return; 
 }
 
 void Classifier::deactivate() {

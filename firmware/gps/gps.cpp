@@ -22,39 +22,17 @@ bool GPS::begin(i2c_inst_t *i2c) {
 bool GPS::update() {
 
   bool fixValid = false;
-  if (absolute_time_diff_us(gps_last_check_time, get_absolute_time()) >=
-      gps_check_interval_ms * 1000) {
-    // Time to check GPS
+  if (absolute_time_diff_us(gps_last_check_time, get_absolute_time()) >= gps_check_interval_ms * 1000) {
     gps_last_check_time = get_absolute_time();
-    // Your GPS checking code here
     if (getPVT() == true) {
-      int32_t latitude = getLatitude();
-      printf("Lat: %ld", latitude);
-
-      int32_t longitude = getLongitude();
-      printf(" Long: %ld", longitude);
-      printf(" (degrees * 10^-7) Datetime:");
-
-      printf("%d-%d-%d %d:%d:%d", getYear(), getMonth(), getDay(), getHour(),
-             getMinute(), getSecond());
-
       bool fixOk = getGnssFixOk();
-      printf(" Fix ok: %d\n", fixOk);
-
       uint8_t pdop = getPDOP();
-      printf(" PDOP: %d\n", pdop);
 
-      if (getTimeFullyResolved() && getTimeValid()) {
-        printf("Time is valid and fully resolved\n");
-        if (fixOk) {
-          printf("GPS fix is valid\n");
+      if (getTimeFullyResolved() && getTimeValid()) 
+        if (fixOk) 
           fixValid = true;
-        } else {
-          printf("GPS fix is not valid\n");
-        }
-      }
+         
     }
-    printf("No PVT data available\n");
   }
 
   if (fixValid) {
@@ -63,6 +41,8 @@ bool GPS::update() {
     latest_location.lat = getLatitude() / 1e7;
     latest_location.lon = getLongitude() / 1e7;
 
+    DEBUG_PRINT(("%d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
+    DEBUG_PRINT(("Lat: %f Lon: %f\n", latest_location.lat, latest_location.lon));
     setNightMode();
     deactivate();
     return false;
@@ -72,6 +52,7 @@ bool GPS::update() {
     latest_location.start_time = getUnixEpochfromRTC();
     latest_location.lat = 0.0f;
     latest_location.lon = 0.0f;
+    DEBUG_PRINT(("No GPS fix, using RTC unix epoch time: %d\n", latest_location.start_time));
 
     setNightMode();
     deactivate();
@@ -87,12 +68,13 @@ void GPS::setNightMode() {
     int hour = utc_time->tm_hour;
     
     // check if daylight
-    if (hour >= 6 && hour < 18) {
+    if (hour >= UTC_DAY_START && hour < UTC_DAY_END) {
         nightmode = false;
     } else {
         nightmode = true;
     }
 }
+
 uint32_t GPS::getUnixEpochfromRTC() {
     // Get the current time from the RTC
     datetime_t dt;
@@ -140,8 +122,7 @@ bool GPS::getNightMode() {
   return nightmode; 
 }
 void GPS::activate() {
-  printf("-- waking up GPS module via pin %d on your microcontroller --\n",
-         WAKEUP_PIN);
+  DEBUG_PRINT(("Waking up the GPS module via pin %d \n", WAKEUP_PIN));
 
   gpio_put(WAKEUP_PIN, 0); // Set LOW
   sleep_ms(1000);
@@ -150,10 +131,10 @@ void GPS::activate() {
   gpio_put(WAKEUP_PIN, 0); // Set LOW
   gps_last_check_time = 0; // Reset the last check time
   gps_start_time = get_absolute_time();
-  return;             // Implement activation logic if needed
+  return;           
 }
 
 void GPS::deactivate() {
   powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
-  return; // Implement deactivation logic if needed
+  return; 
 }

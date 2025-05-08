@@ -1,8 +1,5 @@
-
-
 #include "main.h"
 
-// TODO: implement the following classes
 GPS gps;
 Storage storage;
 Classifier classifier;
@@ -12,25 +9,30 @@ bool GPS_ACTIVE = false;
 bool IMU_ACTIVE = false;
 bool LORA_ACTIVE = false;
 
-// location_reading latest_location;
-
 int main() {
-  // begin the watchdog timer
-  bool success = setup();
-  if (!success) {
-    printf("Setup failed\n");
-    // sleep for 1 minute to allow the watchdog to reset
-    sleep_ms(60 * 1000);
-  }
-  while (true) {
-    main_loop();
-  }
+
+  // start the watchdog timer
+  watchdog_enable(0x2000, 0);
+
+  if (!setup())
+    while (true) {
+      // setup failed - the watchdog will reset the board
+      sleep_ms(1000);
+    }
+
+  // enter the main loop
+  while (true)
+    loop();
 }
 
 bool setup() {
+
+
   stdio_init_all();
-  sleep_ms(5000);
-  printf("Starting setup ...\n");
+  watchdog_update();
+  sleep_ms(1000);
+  watchdog_update();
+
 
   // initialize I2C using the default pins
   i2c_init(i2c0, 400 * 1000); // 100 kHz
@@ -40,106 +42,102 @@ bool setup() {
   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
   gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
 
+  watchdog_update();
+
   // initialize the GPS
   if (!gps.begin(i2c0)) {
-    printf("GPS initialization failed\n");
+    DEBUG_PRINT(("GPS initialization failed"));
     return false;
   }
 
+  watchdog_update();
   // initialize the classifier
   if (!classifier.begin(i2c0)) {
-    printf("classifier initialization failed\n");
+    DEBUG_PRINT(("classifier initialization failed"));
     return false;
   }
 
+  watchdog_update();
   if (!storage.begin()) {
-    printf("storage initialization failed\n");
+    DEBUG_PRINT(("storage initialization failed"));
     return false;
   }
 
-
+  watchdog_update();
   // initialize the lora communication
   if (!lora.begin(&storage)) {
-    printf("Lora initialization failed\n");
+    DEBUG_PRINT(("Lora initialization failed"));
     return false;
   }
-
-  // flash the LED to indicate success
 
   // turn off all LEDs
   turn_off_all_leds();
 
-  printf("Setup complete\n");
+  DEBUG_PRINT(("Setup complete"));
 
   return true;
 }
 
-void main_loop() {
+void loop() {
 
-  printf("going to sleep for 10 seconds\n");
-  enter_low_power_mode_ms(10000);
+  watchdog_update();
   if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
-
-    // // if nothing active then we are at the top of the hour so wake up the
-    // gps and imu and start the watchdog 
-    gps.activate(); 
-    classifier.activate(gps.getUnixEpochfromRTC()); 
-    watchdog_enable(0x2000, 0);
+    // if nothing active then we are at the top of the hour so wake up the gps and imu
+    gps.activate();
+    classifier.activate(gps.getUnixEpochfromRTC());
 
     GPS_ACTIVE = true;
     IMU_ACTIVE = true;
     start_time = get_absolute_time();
   }
 
+  watchdog_update();
   if (GPS_ACTIVE)
     GPS_ACTIVE = gps.update();
 
+  watchdog_update();
   if (IMU_ACTIVE)
     IMU_ACTIVE = classifier.update();
 
+  watchdog_update();
   if ((!IMU_ACTIVE) && (!LORA_ACTIVE)) {
     storage.set_latest_message(gps.get_location(), classifier.get_activity());
     lora.activate(gps.getNightMode());
     LORA_ACTIVE = true;
   }
 
-  if (LORA_ACTIVE)
-     LORA_ACTIVE = lora.update();
-
-  // wdt.clear();
   watchdog_update();
+  if (LORA_ACTIVE)
+    LORA_ACTIVE = lora.update();
 
+
+  watchdog_update();
   if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
 
     watchdog_disable();
     sleep_until_next_hour_boundary(start_time);
-    // wdt.setup(WDT_OFF);  //watchdog
-
-    // lowPower.activate();
+    watchdog_enable(0x2000, 0);
   }
 }
+
 void sleep_until_next_hour_boundary(absolute_time_t start_time) {
-    // calculate the time since we started the GPS/IMU in milliseconds
-    uint64_t elapsed_ms = absolute_time_diff_us(start_time, get_absolute_time()) / 1000;
+  // calculate the time since we started the GPS/IMU in milliseconds
+  uint64_t elapsed_ms = absolute_time_diff_us(start_time, get_absolute_time()) / 1000;
 
-    // define the duration of one hour in milliseconds
-    uint64_t one_hour_ms = 60ULL * 60ULL * 1000ULL; // Use ULL suffix for uint64_t literals
+  // define the duration of one hour in milliseconds
+  uint64_t one_hour_ms = 60ULL * 60ULL * 1000ULL; // Use ULL suffix for uint64_t literals
 
-    // calculate how far into the current hour interval we are (relative to start_time)
-    uint64_t time_into_current_hour_ms = elapsed_ms % one_hour_ms;
+  // calculate how far into the current hour interval we are (relative to start_time)
+  uint64_t time_into_current_hour_ms = elapsed_ms % one_hour_ms;
 
-    // calculate how long until the next hour interval boundary
-    uint64_t sleep_duration_ms = one_hour_ms - time_into_current_hour_ms;
+  // calculate how long until the next hour interval boundary
+  uint64_t sleep_duration_ms = one_hour_ms - time_into_current_hour_ms;
 
-    // If elapsed_ms is exactly a multiple of one_hour_ms, time_into_current_hour_ms is 0.
-    // sleep_duration_ms becomes one_hour_ms, which correctly means sleeping for the next full hour.
-
-    printf("Elapsed time relative to start: %llu ms\n", elapsed_ms);
-    printf("Time into current hour interval: %llu ms\n", time_into_current_hour_ms);
-    printf("Sleeping for %llu ms until next hour boundary relative to start_time\n", sleep_duration_ms);
-
-    enter_low_power_mode_ms(sleep_duration_ms);
+  // If elapsed_ms is exactly a multiple of one_hour_ms, time_into_current_hour_ms is 0. sleep_duration_ms becomes one_hour_ms,
+  // which correctly means sleeping for the next full hour.
+  enter_low_power_mode_ms(sleep_duration_ms);
 }
+
 static void turn_off_all_leds() {
   // Initialize the RGB LED pins as outputs
   gpio_init(18);
@@ -156,5 +154,5 @@ static void turn_off_all_leds() {
   gpio_put(19, 1);
   gpio_put(20, 1);
 
-  printf("All LEDs turned off\n");
+  DEBUG_PRINT(("All LEDs turned off"));
 }

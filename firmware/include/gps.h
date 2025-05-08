@@ -7,10 +7,13 @@
 #include "data_structs.h"
 #include "hardware/rtc.h"
 #include <time.h>
+#include "debug.h"
 
 #define WAKEUP_PIN 7
 
-// class for the GPS module
+#define UTC_DAY_START 3
+#define UTC_DAY_END 16
+
 
 class GPS : public gps_pico
 {

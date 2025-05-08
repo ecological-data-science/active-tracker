@@ -10,6 +10,7 @@
 #include "hardware/i2c.h"
 #include "hardware/watchdog.h"
 
+#include "debug.h"
 #include "gps.h"
 #include "classifier.h"
 #include "lowpower.h"
@@ -17,9 +18,9 @@
 #include "lora.h"
 
 bool setup();
-void main_loop();
-static void turn_off_all_leds();
+void loop();
 
+static void turn_off_all_leds();
 void sleep_until_next_hour_boundary(absolute_time_t start_time);
 
 absolute_time_t start_time;
