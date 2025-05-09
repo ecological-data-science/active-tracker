@@ -35,6 +35,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */ 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "../littlefs/lfs.h"
 
 // block device functions required for littlefs
@@ -47,4 +50,7 @@ int pico_sync_flash_block(const struct lfs_config *c);
 #define PICO_ERASE_PAGE_SIZE 4096
 #define PICO_PROG_PAGE_SIZE 256
 
+#ifdef __cplusplus
+}
+#endif
 #endif

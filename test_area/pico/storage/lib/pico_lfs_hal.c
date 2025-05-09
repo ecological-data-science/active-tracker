@@ -115,6 +115,7 @@ int pico_prog_flash_block(const struct lfs_config *c,
     p.flash_offs = flash_device_offset(block, off);
 
     int rc = flash_safe_execute(call_flash_range_program, &p, UINT32_MAX);
+  printf("pico_prog_flash_block rc %d\n", rc);
     if (rc == PICO_OK) {
         return LFS_ERR_OK;
     }

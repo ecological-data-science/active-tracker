@@ -3,37 +3,67 @@
 
 bool Storage::begin() {
 
-  // Initialize LittleFS
-  int err = lfs_mount(&lfs, &cfg);
 
-  // reformat if we can't mount the filesystem
-  // this should only happen on the first boot
-  if (err) {
-    lfs_format(&lfs, &cfg);
-    err = lfs_mount(&lfs, &cfg);
-  }
-  if (err) {
-        DEBUG_PRINT(("Failed to mount LittleFS"));
-    return false;
-  }
+    // First try to mount the existing filesystem
+    int err = lfs_mount(&lfs, &cfg);
 
-  if (lfs_file_open(&lfs, &file, dataFile, LFS_O_RDONLY) != LFS_ERR_OK) {
+    // If mounting fails, format and then mount
+    if (err) {
+        DEBUG_PRINT(("Failed to mount LittleFS, formatting...\n"));
+        err = lfs_format(&lfs, &cfg);
+        if (err) {
+            DEBUG_PRINT(("Failed to format LittleFS\n"));
+            return false;
+        }
+        
+        err = lfs_mount(&lfs, &cfg);
+        if (err) {
+            DEBUG_PRINT(("Failed to mount LittleFS after formatting\n"));
+            return false;
+        }
+    }
+
+  DEBUG_PRINT(("LittleFS mounted successfully\n"));
+    // read current count
+    uint32_t boot_count = 0;
+    lfs_file_open(&lfs, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
+    lfs_file_read(&lfs, &file, &boot_count, sizeof(boot_count));
+
+    // update boot count
+    boot_count += 1;
+    lfs_file_rewind(&lfs, &file);
+    lfs_file_write(&lfs, &file, &boot_count, sizeof(boot_count));
+
+    // remember the storage is not updated until the file is closed successfully
+    lfs_file_close(&lfs, &file);
+    DEBUG_PRINT(("boot_count: %d\n", boot_count));
+
+    int retval = lfs_file_open(&lfs, &file, "telemetry", LFS_O_RDWR | LFS_O_CREAT);
+    DEBUG_PRINT(("return code: %d\n", retval));
+  lfs_file_close(&lfs, &file);
+  DEBUG_PRINT(("telemetry file opened successfully\n"));
+    retval = lfs_file_open(&lfs, &file, "telemetry.bin", LFS_O_RDWR | LFS_O_CREAT);
+    DEBUG_PRINT(("return code: %d\n", retval));
+  lfs_file_close(&lfs, &file);
+  DEBUG_PRINT(("telemetry.bin file opened successfully\n"));
+  if (lfs_file_open(&lfs, &file, "telemetry.bin", LFS_O_RDONLY) != LFS_ERR_OK) {
     // File doesn't exist, create it
-    if (lfs_file_open(&lfs, &file, dataFile, LFS_O_WRONLY | LFS_O_CREAT) !=
+    if (lfs_file_open(&lfs, &file, "telemetry.bin", LFS_O_WRONLY | LFS_O_CREAT) !=
         LFS_ERR_OK) {
-        DEBUG_PRINT(("Failed to open file for writing"));
+        DEBUG_PRINT(("Failed to open file for writing\n"));
       return false;
     }
     lfs_file_close(&lfs, &file);
   } else {
     lfs_file_close(&lfs, &file);
   }
+  DEBUG_PRINT(("dataFile opened successfully\n"));
 
   if (lfs_file_open(&lfs, &file, devNonce, LFS_O_RDONLY) != LFS_ERR_OK) {
     // File doesn't exist, create it
     if (lfs_file_open(&lfs, &file, devNonce, LFS_O_WRONLY | LFS_O_CREAT) !=
         LFS_ERR_OK) {
-        DEBUG_PRINT(("Failed to open file for writing"));
+        DEBUG_PRINT(("Failed to open file for writing\n"));
       return false;
     }
     uint32_t dev_nonce = 0;
@@ -42,12 +72,13 @@ bool Storage::begin() {
   } else {
     lfs_file_close(&lfs, &file);
   }
+  DEBUG_PRINT(("devNonce opened successfully\n"));
 
   if (lfs_file_open(&lfs, &file, sendCounter, LFS_O_RDONLY) != LFS_ERR_OK) {
     // File doesn't exist, create it
     if (lfs_file_open(&lfs, &file, sendCounter, LFS_O_WRONLY | LFS_O_CREAT) !=
         LFS_ERR_OK) {
-        DEBUG_PRINT(("Failed to open file for writing"));
+        DEBUG_PRINT(("Failed to open file for writing\n"));
       return false;
     }
     uint32_t send_counter = 0;
@@ -57,13 +88,14 @@ bool Storage::begin() {
     // Read the send counter
     if (lfs_file_read(&lfs, &file, &last_record_sent,
                       sizeof(last_record_sent)) != sizeof(last_record_sent)) {
-        DEBUG_PRINT(("Failed to read send counter"));
+        DEBUG_PRINT(("Failed to read send counter\n"));
       lfs_file_close(&lfs, &file);
       return false;
     }
     lfs_file_close(&lfs, &file);
         DEBUG_PRINT(("Last record sent: %d\n", last_record_sent));
   }
+  DEBUG_PRINT(("sendCounter opened successfully\n"));
 
   return true;
 }
@@ -83,7 +115,7 @@ void Storage::archive_latest_message() {
   // and it is still stored in the message_buffer
   if (lfs_file_open(&lfs, &file, dataFile, LFS_O_WRONLY | LFS_O_APPEND) !=
       LFS_ERR_OK) {
-        DEBUG_PRINT(("file open failed"));
+        DEBUG_PRINT(("file open failed\n"));
     return;
   }
 
@@ -110,7 +142,7 @@ bool Storage::anything_to_send(bool nightmode) {
   }
 
   if (lfs_file_open(&lfs, &file, dataFile, LFS_O_RDONLY) != LFS_ERR_OK) {
-        DEBUG_PRINT(("file open failed"));
+        DEBUG_PRINT(("file open failed\n"));
     return false;
   }
 

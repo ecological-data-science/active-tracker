@@ -115,6 +115,8 @@ int pico_prog_flash_block(const struct lfs_config *c,
     p.flash_offs = flash_device_offset(block, off);
 
     int rc = flash_safe_execute(call_flash_range_program, &p, UINT32_MAX);
+  printf("pico_prog_flash_block rc: %d\n", rc);
+  printf("PICO_OK: %d\n", PICO_OK);
     if (rc == PICO_OK) {
         return LFS_ERR_OK;
     }
@@ -140,6 +142,8 @@ int pico_erase_flash_block(const struct lfs_config *c, lfs_block_t block) {
     uint32_t offset = flash_device_offset(block, 0);
     
     int rc = flash_safe_execute(call_flash_range_erase, (void*)offset, UINT32_MAX);
+  printf("pico_prog_flash_block rc: %d\n", rc);
+  printf("PICO_OK: %d\n", PICO_OK);
     if (rc == PICO_OK) {
         return LFS_ERR_OK;
     }

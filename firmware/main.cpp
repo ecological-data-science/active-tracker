@@ -11,8 +11,6 @@ bool LORA_ACTIVE = false;
 
 int main() {
 
-  // start the watchdog timer
-  watchdog_enable(0x2000, 0);
 
   if (!setup())
     while (true) {
@@ -28,11 +26,14 @@ int main() {
 bool setup() {
 
 
+#if DEBUG
   stdio_init_all();
-  watchdog_update();
-  sleep_ms(1000);
-  watchdog_update();
+  sleep_ms(5000);
+#endif
 
+  // start the watchdog timer
+  watchdog_enable(0x2000, 0);
+  DEBUG_PRINT(("Staring setup\n"));
 
   // initialize I2C using the default pins
   i2c_init(i2c0, 400 * 1000); // 100 kHz
@@ -41,39 +42,44 @@ bool setup() {
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
   gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
+  DEBUG_PRINT(("Completed i2c setup\n"));
 
   watchdog_update();
-
-  // initialize the GPS
-  if (!gps.begin(i2c0)) {
-    DEBUG_PRINT(("GPS initialization failed"));
+  if (!storage.begin()) {
+    DEBUG_PRINT(("storage initialization failed\n"));
     return false;
   }
+  DEBUG_PRINT(("Completed storage setup\n"));
+
+  watchdog_update();
+  // initialize the GPS
+  if (!gps.begin(i2c0)) {
+    DEBUG_PRINT(("GPS initialization failed\n"));
+    return false;
+  }
+  DEBUG_PRINT(("Completed gps setup\n"));
 
   watchdog_update();
   // initialize the classifier
   if (!classifier.begin(i2c0)) {
-    DEBUG_PRINT(("classifier initialization failed"));
+    DEBUG_PRINT(("classifier initialization failed\n"));
     return false;
   }
+  DEBUG_PRINT(("Completed classifier setup\n"));
 
-  watchdog_update();
-  if (!storage.begin()) {
-    DEBUG_PRINT(("storage initialization failed"));
-    return false;
-  }
 
   watchdog_update();
   // initialize the lora communication
   if (!lora.begin(&storage)) {
-    DEBUG_PRINT(("Lora initialization failed"));
+    DEBUG_PRINT(("Lora initialization failed\n"));
     return false;
   }
+  DEBUG_PRINT(("Completed lora setup\n"));
 
   // turn off all LEDs
   turn_off_all_leds();
 
-  DEBUG_PRINT(("Setup complete"));
+  DEBUG_PRINT(("Setup complete\n"));
 
   return true;
 }
@@ -154,5 +160,5 @@ static void turn_off_all_leds() {
   gpio_put(19, 1);
   gpio_put(20, 1);
 
-  DEBUG_PRINT(("All LEDs turned off"));
+  DEBUG_PRINT(("All LEDs turned off\n"));
 }

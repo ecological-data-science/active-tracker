@@ -46,8 +46,7 @@ void TFLiteClassifier::begin() {
   output = interpreter->output(0);
 
   outputs = (float *)calloc(N_OUTPUTS, sizeof(float));
-    DEBUG_PRINT(("Exiting setup\n"));
-    DEBUG_PRINT(("Setup complete\n"));
+  DEBUG_PRINT(("tflite setup complete\n"));
 }
 
 TFLiteClassifier::~TFLiteClassifier() { free(outputs); }

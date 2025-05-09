@@ -21,7 +21,7 @@ pico_sdk_init()
 
 
 add_executable(storage
-            storage.c
+            storage.cpp
             lib/pico_lfs_hal.c
             littlefs/lfs.c
             littlefs/lfs_util.c
