@@ -22,7 +22,6 @@ public:
   combined_reading get_current_reading();
 
 private:
-  const char *devNonce = "dev_nonce_counter.bin";
   const char *sendCounter = "send_counter.bin";
   const char *dataFile = "telemetry.bin";
   uint8_t message_buffer[SIZE_OF_RECORD];

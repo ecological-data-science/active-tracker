@@ -4,75 +4,42 @@
 bool Storage::begin() {
 
 
-    // First try to mount the existing filesystem
-    int err = lfs_mount(&lfs, &cfg);
+  // First try to mount the existing filesystem
+  int err = lfs_mount(&lfs, &cfg);
 
-    // If mounting fails, format and then mount
+  // If mounting fails, format and then mount
+  if (err) {
+    DEBUG_PRINT(("Failed to mount LittleFS, formatting...\n"));
+    err = lfs_format(&lfs, &cfg);
     if (err) {
-        DEBUG_PRINT(("Failed to mount LittleFS, formatting...\n"));
-        err = lfs_format(&lfs, &cfg);
-        if (err) {
-            DEBUG_PRINT(("Failed to format LittleFS\n"));
-            return false;
-        }
-        
-        err = lfs_mount(&lfs, &cfg);
-        if (err) {
-            DEBUG_PRINT(("Failed to mount LittleFS after formatting\n"));
-            return false;
-        }
+      DEBUG_PRINT(("Failed to format LittleFS\n"));
+      return false;
     }
+        
+    err = lfs_mount(&lfs, &cfg);
+    if (err) {
+      DEBUG_PRINT(("Failed to mount LittleFS after formatting\n"));
+      return false;
+    }
+  }
 
   DEBUG_PRINT(("LittleFS mounted successfully\n"));
-    // read current count
-    uint32_t boot_count = 0;
-    lfs_file_open(&lfs, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
-    lfs_file_read(&lfs, &file, &boot_count, sizeof(boot_count));
-
-    // update boot count
-    boot_count += 1;
-    lfs_file_rewind(&lfs, &file);
-    lfs_file_write(&lfs, &file, &boot_count, sizeof(boot_count));
-
-    // remember the storage is not updated until the file is closed successfully
-    lfs_file_close(&lfs, &file);
-    DEBUG_PRINT(("boot_count: %d\n", boot_count));
-
-    int retval = lfs_file_open(&lfs, &file, "telemetry", LFS_O_RDWR | LFS_O_CREAT);
-    DEBUG_PRINT(("return code: %d\n", retval));
-  lfs_file_close(&lfs, &file);
-  DEBUG_PRINT(("telemetry file opened successfully\n"));
-    retval = lfs_file_open(&lfs, &file, "telemetry.bin", LFS_O_RDWR | LFS_O_CREAT);
-    DEBUG_PRINT(("return code: %d\n", retval));
-  lfs_file_close(&lfs, &file);
-  DEBUG_PRINT(("telemetry.bin file opened successfully\n"));
-  if (lfs_file_open(&lfs, &file, "telemetry.bin", LFS_O_RDONLY) != LFS_ERR_OK) {
+  
+  if (lfs_file_open(&lfs, &file, dataFile, LFS_O_RDONLY) != LFS_ERR_OK) {
     // File doesn't exist, create it
-    if (lfs_file_open(&lfs, &file, "telemetry.bin", LFS_O_WRONLY | LFS_O_CREAT) !=
+    if (lfs_file_open(&lfs, &file, dataFile, LFS_O_WRONLY | LFS_O_CREAT) !=
         LFS_ERR_OK) {
         DEBUG_PRINT(("Failed to open file for writing\n"));
       return false;
     }
     lfs_file_close(&lfs, &file);
   } else {
+    lfs_soff_t file_size = lfs_file_size(&lfs, &file);
+    int total_records = file_size / record_size;
+    DEBUG_PRINT(("Total records: %d\n", total_records));
     lfs_file_close(&lfs, &file);
   }
   DEBUG_PRINT(("dataFile opened successfully\n"));
-
-  if (lfs_file_open(&lfs, &file, devNonce, LFS_O_RDONLY) != LFS_ERR_OK) {
-    // File doesn't exist, create it
-    if (lfs_file_open(&lfs, &file, devNonce, LFS_O_WRONLY | LFS_O_CREAT) !=
-        LFS_ERR_OK) {
-        DEBUG_PRINT(("Failed to open file for writing\n"));
-      return false;
-    }
-    uint32_t dev_nonce = 0;
-    lfs_file_write(&lfs, &file, &dev_nonce, sizeof(dev_nonce));
-    lfs_file_close(&lfs, &file);
-  } else {
-    lfs_file_close(&lfs, &file);
-  }
-  DEBUG_PRINT(("devNonce opened successfully\n"));
 
   if (lfs_file_open(&lfs, &file, sendCounter, LFS_O_RDONLY) != LFS_ERR_OK) {
     // File doesn't exist, create it

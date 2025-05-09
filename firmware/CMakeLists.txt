@@ -44,7 +44,7 @@ add_executable(pico_tracker
 )
 
 # pull in common dependencies
-target_link_libraries(pico_tracker pico_stdlib hardware_flash hardware_i2c hardware_sleep  gps classifier lowpower storage lora)
+target_link_libraries(pico_tracker pico_stdlib hardware_flash pico_multicore hardware_i2c hardware_sleep  gps classifier lowpower storage lora)
 
 target_include_directories(pico_tracker
     PRIVATE

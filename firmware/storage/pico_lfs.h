@@ -8,9 +8,9 @@
 // flash device, so that code flashed at the start of the device will not collide.
 // Pimoroni Tiny 2040 have an 8Mb flash device, so we're looking to be less than 8Mb.
 
-// 1024 blocks will reserve a 4Mb filsystem - 1/2 of the 8Mb device
+// 1536 blocks will reserve a 6Mb filsystem - 3/4 of the 8Mb device
 
-#define FLASHFS_BLOCK_COUNT 1024
+#define FLASHFS_BLOCK_COUNT 1536
 #define FLASHFS_SIZE_BYTES (PICO_ERASE_PAGE_SIZE * FLASHFS_BLOCK_COUNT)
 
 // Flash can be addressed at several different aliased addresses. We use the base

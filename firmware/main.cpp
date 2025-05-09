@@ -23,8 +23,14 @@ int main() {
     loop();
 }
 
+void core1_entry() {
+  flash_safe_execute_core_init();
+}
+
 bool setup() {
 
+  flash_safe_execute_core_init();
+  multicore_launch_core1(core1_entry);
 
 #if DEBUG
   stdio_init_all();
