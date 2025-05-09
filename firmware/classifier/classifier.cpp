@@ -51,7 +51,7 @@ bool Classifier::update() {
   update_imu(&predict_data[segment_counter * N_CHANNELS]);
   if (segment_counter == SEG_LENGTH) {
     int activity = tflite.classify(predict_data);
-    DEBUG_PRINT(("Activity classification: %d", activity));
+    DEBUG_PRINT(("Activity classification: %d\n", activity));
     segment_counter = 0;
 
     // set so that the first entry goes into the most significant bit and we

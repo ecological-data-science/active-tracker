@@ -28,9 +28,9 @@ bool GPS::update() {
       bool fixOk = getGnssFixOk();
       uint8_t pdop = getPDOP();
 
-      if (getTimeFullyResolved() && getTimeValid()) 
-        if (fixOk) 
+      if (getTimeFullyResolved() && getTimeValid() && fixOk && (pdop < 5)) {
           fixValid = true;
+      }
          
     }
   }
