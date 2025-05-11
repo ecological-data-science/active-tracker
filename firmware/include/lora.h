@@ -3,7 +3,9 @@
 #include "LoraMessage.h" //https://github.com/thesolarnomad/lora-serialization
 #include "storage.h"
 #include "hardware/watchdog.h"
+#include "uart_settings.h"
 #include "debug.h"
+
 
 #define ERR_NOT_JOINED -5
 #define ERR_ALREADY_JOINED -6
@@ -26,7 +28,8 @@ public:
 
 private:
   void sendQuery(const char* atstring);
-  int sendCommand(const char* atstring);
+  void sendCommand(const char* atstring);
+  void sendBytes(const uint8_t *msg, int len);
   int attempt_counter;
   int max_attempts = 10;
   Storage *storage;

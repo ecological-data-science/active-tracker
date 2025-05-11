@@ -5,7 +5,7 @@
 
 #include "pico/sleep.h"
 
-#include "uart.h"
+#include "uart_settings.h"
 #include "debug.h"
 
 

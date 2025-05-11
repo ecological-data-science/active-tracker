@@ -2,7 +2,58 @@
 
 #include "lora.h"
 
+void Lora::sendCommand(const char *msg)
+{
+    uint64_t timeout_us = 1000000;  // Timeout period in microseconds (1 second)
+    
+  watchdog_update();
+    uart_puts(UART_ID, msg);
+    uart_puts(UART_ID, "\r\n");
+    
+  watchdog_update();
+    uint64_t start_time = time_us_64();  // Record the starting time
+    while (time_us_64() - start_time < timeout_us)
+    {
+        while (uart_is_readable(UART_ID)) {
+            uint8_t ch = uart_getc(UART_ID);
+            putchar(ch);  // Output to USB/stdio
+        }
+    }
+  watchdog_update();
+}
+void Lora::sendBytes(const uint8_t *msg, int len)
+{
+  uint64_t timeout_us = 1000000;  // Timeout period in microseconds (1 second)
+
+  watchdog_update();
+  uart_write_blocking(UART_ID, msg, len);
+  
+  watchdog_update();
+  uint64_t start_time = time_us_64();  // Record the starting time
+  while (time_us_64() - start_time < timeout_us)
+    {
+        while (uart_is_readable(UART_ID)) {
+            uint8_t ch = uart_getc(UART_ID);
+            putchar(ch);  // Output to USB/stdio
+        }
+    }
+  watchdog_update();
+}
+
+
+
 void Lora::wakeup() {
+  watchdog_update();
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);  // Switch back to UART
+    gpio_set_dir(UART_TX_PIN, GPIO_OUT);
+    // Re-initialize UART if needed
+    uart_init(UART_ID, BAUD_RATE);
+  watchdog_update();
+  sleep_ms(1000);
+  uint8_t message[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x74, 0x2B, 0x6C, 0x6F,
+                         0x77, 0x70, 0x6F, 0x77, 0x65, 0x72, 0x3D, 0x61, 0x75,
+                         0x74, 0x6F, 0x6F, 0x66, 0x66, 0x0D, 0x0A};
+  sendBytes(message, sizeof(message));
   // SerialLoRa.println("AT+WAKEUP");
   // delay(500);
   // SerialLoRa.flush();
@@ -14,14 +65,34 @@ void Lora::sleep() {
   // delay(500);
   // SerialLoRa.flush();
   // delay(500);
+    sendCommand("AT+LOWPOWER=AUTOON");
+    // uart_puts(UART_ID, "AT+LOWPOWER=AUTOON\r\n");
+    // while (uart_is_readable(UART_ID)) {
+    //     putchar(uart_getc(UART_ID));
+    // }
+
+    // // Set UART_TX to input mode for low power
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_SIO);  // Switch from UART to SIO (GPIO)
+    gpio_set_dir(UART_TX_PIN, GPIO_IN);
 }
 
 bool Lora::begin(Storage *_storage) {
 
   storage = _storage;
 
+    // Initialize UART1
+    uart_init(UART_ID, BAUD_RATE);
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
   // TODO setup uart
-  wakeup();
+    wakeup();
+    sleep_ms(500);
+    sendCommand("AT+ID=DevEui");
+  printf("AT+ID=DevEui\n");
+
+    sleep_ms(500);
+    sendCommand("AT+ID=AppEui");
+    
   // TODO set the device keys etc
   //
   // sendQuery("AT+VER?");
@@ -273,6 +344,7 @@ bool Lora::send_message(LoraMessage message) {
     lora_start_time = get_absolute_time();
     nightmode = _nightmode;
     wakeup();
+    sendCommand("AT");
     //   if (lora_active==true)
     //     return;
     //   SerialLoRa.begin(19200);
@@ -306,54 +378,54 @@ bool Lora::send_message(LoraMessage message) {
     //   return;
      }
     //
-  void Lora::sendQuery(const char* atstring) {
-    //
-    //   Serial.print("Sending query: ");
-    //   Serial.println(atstring);
-    //
-    //   SerialLoRa.println(atstring);
-    //   String answer;
-    //   while (true)
-    //   {
-    //
-    //     answer = SerialLoRa.readStringUntil('\r\n');
-    //     if (answer.startsWith("+OK")){
-    //       break;
-    //     }
-    //     if (answer.startsWith("+ERR")){
-    //       break;
-    //     }
-    //   }
-    //   Serial.print("Response: ");
-    //   Serial.println(answer);
-    //   delay(500);
-  }
+  // void Lora::sendQuery(const char* atstring) {
+  //   //
+  //   //   Serial.print("Sending query: ");
+  //   //   Serial.println(atstring);
+  //   //
+  //   //   SerialLoRa.println(atstring);
+  //   //   String answer;
+  //   //   while (true)
+  //   //   {
+  //   //
+  //   //     answer = SerialLoRa.readStringUntil('\r\n');
+  //   //     if (answer.startsWith("+OK")){
+  //   //       break;
+  //   //     }
+  //   //     if (answer.startsWith("+ERR")){
+  //   //       break;
+  //   //     }
+  //   //   }
+  //   //   Serial.print("Response: ");
+  //   //   Serial.println(answer);
+  //   //   delay(500);
+  // }
 
-  int Lora::sendCommand(const char* atstring) {
-    int modem_status = 0;
-
-    // Serial.print("Sending command: ");
-    // Serial.println(atstring);
-    //
-    // SerialLoRa.println(atstring);
-    //
-    // String answer;
-    // while (true)
-    // {
-    //
-    //   answer = SerialLoRa.readStringUntil('\r\n');
-    //   if (answer.startsWith("+OK")){
-    //     modem_status=MODEM_OK;
-    //     break;
-    //   }
-    //   if (answer.startsWith("+ERR")){
-    //     // get the error code
-    //     modem_status = answer.substring(answer.indexOf("=")+1).toInt();
-    //     break;
-    //   }
-    // }
-    // Serial.print("Response: ");
-    // Serial.println(answer);
-    // delay(500);
-    return modem_status;
-  }
+  // int Lora::sendCommand(const char* atstring) {
+  //   int modem_status = 0;
+  //
+  //   // Serial.print("Sending command: ");
+  //   // Serial.println(atstring);
+  //   //
+  //   // SerialLoRa.println(atstring);
+  //   //
+  //   // String answer;
+  //   // while (true)
+  //   // {
+  //   //
+  //   //   answer = SerialLoRa.readStringUntil('\r\n');
+  //   //   if (answer.startsWith("+OK")){
+  //   //     modem_status=MODEM_OK;
+  //   //     break;
+  //   //   }
+  //   //   if (answer.startsWith("+ERR")){
+  //   //     // get the error code
+  //   //     modem_status = answer.substring(answer.indexOf("=")+1).toInt();
+  //   //     break;
+  //   //   }
+  //   // }
+  //   // Serial.print("Response: ");
+  //   // Serial.println(answer);
+  //   // delay(500);
+  //   return modem_status;
+  // }
