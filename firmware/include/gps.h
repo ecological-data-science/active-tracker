@@ -30,8 +30,8 @@ public:
   // get the unix epoch time
   uint32_t getUnixEpochfromRTC();
 
-private:
   void deactivate();
+private:
   location_reading latest_location;
   absolute_time_t gps_last_check_time;
   absolute_time_t gps_start_time;

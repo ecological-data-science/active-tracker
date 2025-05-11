@@ -111,6 +111,9 @@ public:
   bool begin(i2c_inst_t *i2c, uint8_t deviceAddress = ICM20649_I2CADDR_DEFAULT);
   bool enableAccelDLPF(bool enable, icm20x_accel_cutoff_t cutoff_freq);
   bool enableGyrolDLPF(bool enable, icm20x_gyro_cutoff_t cutoff_freq);
+  void sleepMode();
+  void wakeFromSleep();
+
 
   uint8_t getGyroRateDivisor(void);
   void setGyroRateDivisor(uint8_t new_gyro_divisor);

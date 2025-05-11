@@ -18,6 +18,17 @@ int main() {
       sleep_ms(1000);
     }
 
+  // sleep test
+  DEBUG_PRINT(("Sleeping for 100 seconds\n"));
+  DEBUG_PRINT(("deactivating GPS\n"));
+  gps.deactivate();
+  classifier.deactivate();
+  sleep_ms(1000);
+  DEBUG_PRINT(("deactivating watchdog\n"));
+  watchdog_disable();
+  enter_low_power_mode_ms(100000);
+
+
   // enter the main loop
   while (true)
     loop();

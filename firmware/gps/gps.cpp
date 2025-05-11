@@ -6,11 +6,14 @@ bool GPS::begin(i2c_inst_t *i2c) {
   uint16_t maxWait = kUBLOXGNSSDefaultMaxWait;
   bool assumeSuccess = false;
 
-  rtc_init();
+  // rtc_init();
+
 
   gpio_init(WAKEUP_PIN);
   gpio_set_dir(WAKEUP_PIN, GPIO_OUT);
   gpio_put(WAKEUP_PIN, 0);
+
+  activate();
 
   // Initialize the I2C buss class i.e. setup default Wire port
   _i2cBus.init(deviceAddress, i2c);
@@ -28,6 +31,13 @@ bool GPS::update() {
       bool fixOk = getGnssFixOk();
       uint8_t pdop = getPDOP();
 
+      #ifdef DEBUG
+
+      DEBUG_PRINT(("GPS: %d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
+      DEBUG_PRINT(("Lat: %f Lon: %f ", getLatitude() / 1e7, getLongitude() / 1e7));
+      DEBUG_PRINT(("Fix: %d ", fixOk));
+      DEBUG_PRINT(("PDOP: %d ", pdop));
+      #endif
       if (getTimeFullyResolved() && getTimeValid() && fixOk && (pdop < 5)) {
           fixValid = true;
       }

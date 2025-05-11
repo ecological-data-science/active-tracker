@@ -10,7 +10,28 @@ imu::imu() {
   magX = magY = magZ = 0;
 }
 
+void imu::sleepMode() {
+  _setBank(0);
 
+  // Set SLEEP bit in PWR_MGMT_1 (bit 6 = 1)
+  uint8_t reg_data[2] = {ICM20X_B0_PWR_MGMT_1, 0x40}; // 0x40 = 0100 0000
+  _i2cBus.writeBytes(reg_data, 2);
+
+  // Optional: Short wait for device to enter sleep
+  sleep_ms(10);
+}
+
+
+void imu::wakeFromSleep() {
+  _setBank(0);
+
+  // Clear SLEEP bit and select best available clock source (bits 2:0 = 001)
+  uint8_t reg_data[2] = {ICM20X_B0_PWR_MGMT_1, 0x01}; // 0x01 = 0000 0001
+  _i2cBus.writeBytes(reg_data, 2);
+
+  // Optional: Wait for device to stabilise after waking
+  sleep_ms(10);
+}
 
 void imu::writeAccelRange(uint8_t new_accel_range) {
   _setBank(2);

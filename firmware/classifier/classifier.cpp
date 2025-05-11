@@ -127,6 +127,7 @@ activity_reading Classifier::get_activity() {
 
 void Classifier::activate(long unixtime){
 
+  wakeFromSleep();
   latest_activity.start_time = unixtime;
 
   memset(latest_activity.activities,0,sizeof(latest_activity.activities));
@@ -138,5 +139,6 @@ void Classifier::activate(long unixtime){
 }
 
 void Classifier::deactivate() {
+  sleepMode();
   return; // Implement deactivation logic if needed
 }

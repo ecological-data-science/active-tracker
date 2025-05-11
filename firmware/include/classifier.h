@@ -28,6 +28,7 @@ public:
   bool begin(i2c_inst_t *i2c);
   bool update();
   void activate(long int unixtime);
+  void deactivate();
   activity_reading get_activity();
 
 private:
@@ -40,7 +41,6 @@ private:
   float acc_bias[3] = {0.0f, 0.0f, SENSORS_GRAVITY_EARTH};
   float gyro_bias[3] = {0.0f, 0.0f, 0.0f};
   float angle_bias[2] = {0.0f, 0.0f};
-  void deactivate();
   void update_imu(float *pdata);
 
   activity_reading latest_activity;
