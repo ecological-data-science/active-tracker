@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "hardware/i2c.h"
 #include "hardware/watchdog.h"
+#include "hardware/clocks.h"
 #include "pico/flash.h"
 
 #include "debug.h"

@@ -6,7 +6,7 @@ bool GPS::begin(i2c_inst_t *i2c) {
   uint16_t maxWait = kUBLOXGNSSDefaultMaxWait;
   bool assumeSuccess = false;
 
-  // rtc_init();
+  rtc_init();
 
 
   gpio_init(WAKEUP_PIN);
@@ -31,13 +31,13 @@ bool GPS::update() {
       bool fixOk = getGnssFixOk();
       uint8_t pdop = getPDOP();
 
-      #ifdef DEBUG
+      // #ifdef DEBUG
+      // DEBUG_PRINT(("GPS: %d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
+      // DEBUG_PRINT(("Lat: %f Lon: %f ", getLatitude() / 1e7, getLongitude() / 1e7));
+      // DEBUG_PRINT(("Fix: %d ", fixOk));
+      // DEBUG_PRINT(("PDOP: %d ", pdop));
+      // #endif
 
-      DEBUG_PRINT(("GPS: %d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
-      DEBUG_PRINT(("Lat: %f Lon: %f ", getLatitude() / 1e7, getLongitude() / 1e7));
-      DEBUG_PRINT(("Fix: %d ", fixOk));
-      DEBUG_PRINT(("PDOP: %d ", pdop));
-      #endif
       if (getTimeFullyResolved() && getTimeValid() && fixOk && (pdop < 5)) {
           fixValid = true;
       }
@@ -52,7 +52,7 @@ bool GPS::update() {
     latest_location.lon = getLongitude() / 1e7;
 
     DEBUG_PRINT(("%d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
-    DEBUG_PRINT(("Lat: %f Lon: %f\n", latest_location.lat, latest_location.lon));
+    DEBUG_PRINT(("Lat: %f Lon: %f", latest_location.lat, latest_location.lon));
     setNightMode();
     deactivate();
     return false;
@@ -62,7 +62,7 @@ bool GPS::update() {
     latest_location.start_time = getUnixEpochfromRTC();
     latest_location.lat = 0.0f;
     latest_location.lon = 0.0f;
-    DEBUG_PRINT(("No GPS fix, using RTC unix epoch time: %d\n", latest_location.start_time));
+    DEBUG_PRINT(("No GPS fix, using RTC unix epoch time: %u", latest_location.start_time));
 
     setNightMode();
     deactivate();
@@ -132,7 +132,7 @@ bool GPS::getNightMode() {
   return nightmode; 
 }
 void GPS::activate() {
-  DEBUG_PRINT(("Waking up the GPS module via pin %d \n", WAKEUP_PIN));
+  DEBUG_PRINT(("Waking up the GPS module via pin %d", WAKEUP_PIN));
 
   gpio_put(WAKEUP_PIN, 0); // Set LOW
   sleep_ms(1000);

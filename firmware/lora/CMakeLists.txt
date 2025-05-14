@@ -8,7 +8,6 @@ add_library(lora
 target_link_libraries(lora 
     pico_stdlib 
     hardware_uart
-    loramessage
     storage
 )
 

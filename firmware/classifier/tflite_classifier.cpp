@@ -6,16 +6,16 @@ TFLiteClassifier::TFLiteClassifier() {
 }
 
 void TFLiteClassifier::begin() {
-  DEBUG_PRINT(("starting tflite setup\n"));
+  DEBUG_PRINT(("starting tflite setup"));
   tflite::InitializeTarget();
-  DEBUG_PRINT(("target initialized\n"));
+  DEBUG_PRINT(("target initialized"));
 
   // Map the model into a usable data structure. This doesn't involve any
   // copying or parsing, it's a very lightweight operation.
   model = tflite::GetModel(model_tflite);
   if (model->version() != TFLITE_SCHEMA_VERSION) {
-        DEBUG_PRINT(("Exiting setup\n"));
-        DEBUG_PRINT(("Schema version mismatch\n"));
+        DEBUG_PRINT(("Exiting setup"));
+        DEBUG_PRINT(("Schema version mismatch"));
     return;
   }
 
@@ -36,8 +36,8 @@ void TFLiteClassifier::begin() {
   // Allocate memory from the tensor_arena for the model's tensors.
   TfLiteStatus allocate_status = interpreter->AllocateTensors();
   if (allocate_status != kTfLiteOk) {
-        DEBUG_PRINT(("Exiting setup\n"));
-        DEBUG_PRINT(("AllocateTensors() failed\n"));
+        DEBUG_PRINT(("Exiting setup"));
+        DEBUG_PRINT(("AllocateTensors() failed"));
     return;
   }
 
@@ -46,7 +46,7 @@ void TFLiteClassifier::begin() {
   output = interpreter->output(0);
 
   outputs = (float *)calloc(N_OUTPUTS, sizeof(float));
-  DEBUG_PRINT(("tflite setup complete\n"));
+  DEBUG_PRINT(("tflite setup complete"));
 }
 
 TFLiteClassifier::~TFLiteClassifier() { free(outputs); }

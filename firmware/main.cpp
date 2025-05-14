@@ -10,24 +10,13 @@ bool IMU_ACTIVE = false;
 bool LORA_ACTIVE = false;
 
 int main() {
-
+  set_sys_clock_48mhz();
 
   if (!setup())
     while (true) {
       // setup failed - the watchdog will reset the board
       sleep_ms(1000);
     }
-
-  // sleep test
-  DEBUG_PRINT(("Sleeping for 100 seconds\n"));
-  DEBUG_PRINT(("deactivating GPS\n"));
-  gps.deactivate();
-  classifier.deactivate();
-  sleep_ms(1000);
-  DEBUG_PRINT(("deactivating watchdog\n"));
-  watchdog_disable();
-  enter_low_power_mode_ms(100000);
-
 
   // enter the main loop
   while (true)
@@ -50,7 +39,7 @@ bool setup() {
 
   // start the watchdog timer
   watchdog_enable(0x2000, 0);
-  DEBUG_PRINT(("Staring setup\n"));
+  DEBUG_PRINT(("Staring setup"));
 
   // initialize I2C using the default pins
   i2c_init(i2c0, 400 * 1000); // 100 kHz
@@ -59,44 +48,44 @@ bool setup() {
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
   gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
-  DEBUG_PRINT(("Completed i2c setup\n"));
+  DEBUG_PRINT(("Completed i2c setup"));
 
   watchdog_update();
   if (!storage.begin()) {
-    DEBUG_PRINT(("storage initialization failed\n"));
+    DEBUG_PRINT(("storage initialization failed"));
     return false;
   }
-  DEBUG_PRINT(("Completed storage setup\n"));
+  DEBUG_PRINT(("Completed storage setup"));
 
   watchdog_update();
   // initialize the GPS
   if (!gps.begin(i2c0)) {
-    DEBUG_PRINT(("GPS initialization failed\n"));
+    DEBUG_PRINT(("GPS initialization failed"));
     return false;
   }
-  DEBUG_PRINT(("Completed gps setup\n"));
+  DEBUG_PRINT(("Completed gps setup"));
 
   watchdog_update();
   // initialize the classifier
   if (!classifier.begin(i2c0)) {
-    DEBUG_PRINT(("classifier initialization failed\n"));
+    DEBUG_PRINT(("classifier initialization failed"));
     return false;
   }
-  DEBUG_PRINT(("Completed classifier setup\n"));
+  DEBUG_PRINT(("Completed classifier setup"));
 
 
   watchdog_update();
   // initialize the lora communication
   if (!lora.begin(&storage)) {
-    DEBUG_PRINT(("Lora initialization failed\n"));
+    DEBUG_PRINT(("Lora initialization failed"));
     return false;
   }
-  DEBUG_PRINT(("Completed lora setup\n"));
+  DEBUG_PRINT(("Completed lora setup"));
 
   // turn off all LEDs
   turn_off_all_leds();
 
-  DEBUG_PRINT(("Setup complete\n"));
+  DEBUG_PRINT(("Setup complete"));
 
   return true;
 }
@@ -124,6 +113,7 @@ void loop() {
 
   watchdog_update();
   if ((!IMU_ACTIVE) && (!LORA_ACTIVE)) {
+    DEBUG_PRINT(("IMU inactive, sending data"));
     storage.set_latest_message(gps.get_location(), classifier.get_activity());
     lora.activate(gps.getNightMode());
     LORA_ACTIVE = true;
@@ -136,6 +126,7 @@ void loop() {
 
   watchdog_update();
   if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
+    DEBUG_PRINT(("All inactive, sleeping until next hour"));
 
     watchdog_disable();
     sleep_until_next_hour_boundary(start_time);
@@ -155,10 +146,13 @@ void sleep_until_next_hour_boundary(absolute_time_t start_time) {
 
   // calculate how long until the next hour interval boundary
   uint64_t sleep_duration_ms = one_hour_ms - time_into_current_hour_ms;
+  DEBUG_PRINT(("Sleeping for %llu ms", sleep_duration_ms));
 
+  set_sys_clock_khz(125000, true);
   // If elapsed_ms is exactly a multiple of one_hour_ms, time_into_current_hour_ms is 0. sleep_duration_ms becomes one_hour_ms,
   // which correctly means sleeping for the next full hour.
   enter_low_power_mode_ms(sleep_duration_ms);
+  set_sys_clock_48mhz();
 }
 
 static void turn_off_all_leds() {
@@ -177,5 +171,5 @@ static void turn_off_all_leds() {
   gpio_put(19, 1);
   gpio_put(20, 1);
 
-  DEBUG_PRINT(("All LEDs turned off\n"));
+  DEBUG_PRINT(("All LEDs turned off"));
 }

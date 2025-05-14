@@ -71,7 +71,7 @@ void Lora::sleep() {
     //     putchar(uart_getc(UART_ID));
     // }
 
-    // // Set UART_TX to input mode for low power
+    // Set UART_TX to input mode for low power
     gpio_set_function(UART_TX_PIN, GPIO_FUNC_SIO);  // Switch from UART to SIO (GPIO)
     gpio_set_dir(UART_TX_PIN, GPIO_IN);
 }
@@ -88,7 +88,6 @@ bool Lora::begin(Storage *_storage) {
     wakeup();
     sleep_ms(500);
     sendCommand("AT+ID=DevEui");
-  printf("AT+ID=DevEui\n");
 
     sleep_ms(500);
     sendCommand("AT+ID=AppEui");
@@ -119,6 +118,11 @@ bool Lora::begin(Storage *_storage) {
   return true;
 }
 
+void Lora::_intToBytes(uint8_t *buf, int32_t i, uint8_t byteSize) {
+    for(uint8_t x = 0; x < byteSize; x++) {
+        buf[x] = (uint8_t) (i >> (x*8));
+    }
+}
 bool Lora::update() {
 
   // attempts to send a message and returns false if the lora comms
@@ -137,10 +141,6 @@ bool Lora::update() {
 
   combined_reading current_reading = storage->get_current_reading();
 
-  LoraMessage l_message;
-  l_message.addUnixtime(current_reading.location.start_time);
-  l_message.addLatLng(current_reading.location.lat,
-                      current_reading.location.lon);
 
   bool activity_sent = false;
   bool location_sent = false;
@@ -148,7 +148,17 @@ bool Lora::update() {
   if (current_reading.partially_sent)
     location_sent = true;
   else
-    location_sent = send_message(l_message);
+  {
+    _offset = 0;
+    _intToBytes(location_buffer + _offset, current_reading.location.start_time, 4);
+    _offset += 4;
+    int32_t lat = current_reading.location.lat * 1e6;
+    int32_t lng = current_reading.location.lon * 1e6;
+    _intToBytes(location_buffer + _offset, lat, 4);
+    _offset += 4;
+    _intToBytes(location_buffer + _offset, lng, 4);
+    location_sent = sendPayload(location_buffer, location_buffer_len);
+  }
 
   if (!join_success) {
       DEBUG_PRINT(("Not actually joined"));
@@ -159,24 +169,31 @@ bool Lora::update() {
   }
 
   if (location_sent) {
+    DEBUG_PRINT(("location sent successfully"));
     if (!current_reading.partially_sent)
     {
       attempt_counter = max_attempts;
       storage->location_send_successful();
     }
-    LoraMessage a_message;
 
-    a_message.addUnixtime(current_reading.activity.start_time);
-    for (int i = 0; i < 45; i++)
-      a_message.addUint8(current_reading.activity.activities[i]);
-
-    activity_sent = send_message(a_message);
+    _offset = 0;
+    _intToBytes(activity_buffer + _offset, current_reading.activity.start_time, 4);
+    _offset += 4;
+    for (int i = 0; i < NUM_CLASSIFICATIONS; i++)
+    {
+      _intToBytes(activity_buffer + _offset, current_reading.activity.activities[i], 1);
+      _offset += 1;
+    }
+    activity_sent = sendPayload(activity_buffer, activity_buffer_len);
   }
 
+  DEBUG_PRINT(("activity sending attempted"));
   if (activity_sent) {
+    DEBUG_PRINT(("activity sent successfully"));
     attempt_counter = max_attempts;
     storage->activity_send_successful();
   } else {
+    DEBUG_PRINT(("activity send failed"));
     // if we get here then we have not sent a message
     // but we have successfully sent one this session
     attempt_counter--;
@@ -184,7 +201,7 @@ bool Lora::update() {
 
   if (absolute_time_diff_us(lora_start_time, get_absolute_time()) >=
       lora_run_time * 1000) {
-    DEBUG_PRINT(("lora run time exceeded, stopping lora\n"));
+    DEBUG_PRINT(("lora run time exceeded, stopping lora"));
     if (!activity_sent) {
       // if we have not sent a message then we need to archive the
       // latest message
@@ -195,7 +212,7 @@ bool Lora::update() {
   }
 
   if (attempt_counter == 0){
-    DEBUG_PRINT(("lora attempts exceeded, stopping lora\n"));
+    DEBUG_PRINT(("lora attempts exceeded, stopping lora"));
     if (!activity_sent) {
       // if we have not sent a message then we need to archive the
       // latest message
@@ -208,7 +225,7 @@ bool Lora::update() {
   bool send_needed = storage->anything_to_send(nightmode);
 
   if (!send_needed) {
-    DEBUG_PRINT(("no messages to send, stopping lora\n"));
+    DEBUG_PRINT(("no messages to send, stopping lora"));
     deactivate();
     return false;
   }
@@ -258,7 +275,7 @@ bool Lora::join() {
     return joined;
 }
 
-bool Lora::send_message(LoraMessage message) {
+bool Lora::sendPayload(uint8_t* message, int len) {
 
     watchdog_update();
     DEBUG_PRINT(("sending message"));
@@ -269,16 +286,16 @@ bool Lora::send_message(LoraMessage message) {
     // location messages are length 12 and go to port 3
     // activity messages are length 49 and go to port 5
   combined_reading current_reading = storage->get_current_reading(); // TODO remove and replace with lora send logic
-    if (message.getLength()==12)
+    if (len==12)
     {
 
-      DEBUG_PRINT(("sending location message: time %lu, lat %f, lon %f\n",
+      DEBUG_PRINT(("sending location message: time %lu, lat %f, lon %f",
                    current_reading.location.start_time, current_reading.location.lat, current_reading.location.lon));
     //   SerialLoRa.print("AT+PCTX 3,");
     }
     else
     {
-      DEBUG_PRINT(("sending activity message: time %lu, activity %d\n",
+      DEBUG_PRINT(("sending activity message: time %lu, activity %d",
                    current_reading.activity.start_time, current_reading.activity.activities[0]));
     //   SerialLoRa.print("AT+PCTX 5,");
     }

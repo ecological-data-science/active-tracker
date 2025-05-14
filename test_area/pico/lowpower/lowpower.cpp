@@ -14,6 +14,7 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "pico/sleep.h"
+#include "hardware/clocks.h"
 
 #include "lib/gps_pico.h"
 #include "hardware/uart.h"
@@ -40,7 +41,7 @@ void sendmsg(const char *msg)
     {
         while (uart_is_readable(UART_ID)) {
             uint8_t ch = uart_getc(UART_ID);
-            putchar(ch);  // Output to USB/stdio
+            // putchar(ch);  // Output to USB/stdio
         }
     }
 }
@@ -57,13 +58,13 @@ void sendbytes(const uint8_t *msg, int len)
     {
         while (uart_is_readable(UART_ID)) {
             uint8_t ch = uart_getc(UART_ID);
-            putchar(ch);  // Output to USB/stdio
+            // putchar(ch);  // Output to USB/stdio
         }
     }
 }
 
 void wake_lora() {
-  printf("-- waking up Lora module \n" );
+  // printf("-- waking up Lora module \n" );
 
     uint8_t message[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x74, 0x2B, 0x6C, 0x6F,
                          0x77, 0x70, 0x6F, 0x77, 0x65, 0x72, 0x3D, 0x61, 0x75,
@@ -71,7 +72,7 @@ void wake_lora() {
   sendbytes(message, sizeof(message));
 }
 void wake_gps() {
-  printf("-- waking up GPS module via pin %d on your microcontroller --\n", WAKEUP_PIN);
+  // printf("-- waking up GPS module via pin %d on your microcontroller --\n", WAKEUP_PIN);
 
   gpio_put(WAKEUP_PIN, 0);  // Set LOW
   sleep_ms(1000);
@@ -98,11 +99,11 @@ static void turn_off_all_leds() {
   gpio_put(19, 1);
   gpio_put(20, 1);
 
-  printf("All LEDs turned off\n");
+  // printf("All LEDs turned off\n");
 }
 
 static void alarm_sleep_callback(uint alarm_id) {
-  printf("alarm woke us up\n");
+  // printf("alarm woke us up\n");
   uart_default_tx_wait_blocking();
   awake = true;
   hardware_alarm_set_callback(alarm_id, NULL);
@@ -111,9 +112,11 @@ static void alarm_sleep_callback(uint alarm_id) {
 
 int main() {
 
+set_sys_clock_48mhz();
+  sleep_ms(1000);
     stdio_init_all();
     sleep_ms(5000);
-    printf("Hello, Griffin!\n");
+    // printf("Hello, Griffin!\n");
     sleep_ms(1000);
 
     // Initialize UART1
@@ -122,10 +125,10 @@ int main() {
     gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
     
   wake_lora();
-  printf("UART initialized\n");
+  // printf("UART initialized\n");
     sleep_ms(1000);
     sendmsg("AT+ID=DevEui");
-  printf("AT+ID=DevEui\n");
+  // printf("AT+ID=DevEui\n");
 
     sleep_ms(1000);
     sendmsg("AT+ID=AppEui");
@@ -146,11 +149,11 @@ int main() {
   gpio_set_dir(WAKEUP_PIN, GPIO_OUT);
   gpio_put(WAKEUP_PIN, 0);
   
-  printf("Hello Alarm Sleep!\n");
+  // printf("Hello Alarm Sleep!\n");
   sleep_ms(5000);
 
   // Initialize I2C using the default pins
-  i2c_init(i2c0, 100 * 1000); // 100 kHz
+  i2c_init(i2c0, 400 * 1000); // 100 kHz
 
   gpio_set_function(PICO_DEFAULT_I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C);
@@ -159,18 +162,18 @@ int main() {
 
   sleep_ms(1000);
 
-  printf("Starting GPS ...\n");
+  // printf("Starting GPS ...\n");
   sleep_ms(1000);
   wake_gps();
   // Now initialize the GPS
   if (gps.begin(i2c0) == false) {
-    printf("GPS module not detected, check wiring\n");
+    // printf("GPS module not detected, check wiring\n");
     while (1) {
       sleep_ms(100);
     }
   }
 
-  printf("GPS module initialized successfully\n");
+  // printf("GPS module initialized successfully\n");
 
     // // Initialize UART1
     // uart_init(UART_ID, BAUD_RATE);
@@ -180,10 +183,10 @@ int main() {
   turn_off_all_leds();
 
   do {
-    printf("Awake for 10 seconds\n");
+    // printf("Awake for 10 seconds\n");
     sleep_ms(1000 * 10);
 
-    printf("Sleeping for 10 seconds\n");
+    // printf("Sleeping for 10 seconds\n");
 
     gps.powerOffWithInterrupt(0, VAL_RXM_PMREQ_WAKEUPSOURCE_EXTINT0);
     sendmsg("AT+LOWPOWER=AUTOON");
@@ -203,6 +206,9 @@ int main() {
     // Set the crystal oscillator as the dormant clock source, UART will be
     // reconfigured from here This is only really necessary before sending the
     // pico dormant but running from xosc while asleep saves power
+
+
+set_sys_clock_khz(125000, true);
     sleep_run_from_xosc();
     awake = false;
     // Go to sleep until the alarm interrupt is generated after 10 seconds
@@ -210,7 +216,7 @@ int main() {
     if (sleep_goto_sleep_for(30000, &alarm_sleep_callback)) {
       // Make sure we don't wake
       while (!awake) {
-        printf("Should be sleeping\n");
+        // printf("Should be sleeping\n");
       }
     }
     // Re-enabling clock sources and generators.
