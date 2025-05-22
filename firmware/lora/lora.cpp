@@ -1,6 +1,15 @@
 
 
 #include "lora.h"
+
+static const char join_failed_msg[] = "+JOIN: Join failed";
+static const char join_succeeded_msg[] = "+JOIN: NetID";
+static const char join_attempt_complete_msg[] = "+JOIN: Done";
+static const char already_joined_msg[] = "+JOIN: Joined already";
+static const char not_joined_msg[] = "+CMSGHEX: Please join network first";
+static const char send_msg_complete[] = "+CMSGHEX: Done";
+static const char send_msg_ack[] = "+CMSGHEX: ACK Received";
+
 void Lora::sendCommand(const char *msg) {
   uint64_t timeout_us = 1000000;     // Overall timeout: 1 second
   uint64_t idle_timeout_us = 100000; // Stop after 100ms of no new data
@@ -132,12 +141,11 @@ void Lora::sleep() {
 bool Lora::begin(Storage *_storage) {
 
   storage = _storage;
-
-  // Initialize UART1
+ 
   uart_init(UART_ID, BAUD_RATE);
   gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
   gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-  // TODO setup uart
+  
   wakeup();
   sleep_ms(500);
   sendCommand("AT+ID=DevEui");
@@ -145,27 +153,14 @@ bool Lora::begin(Storage *_storage) {
   sleep_ms(500);
   sendCommand("AT+ID=AppEui");
   sendCommand("AT+MODE=LWOTAA");
-  // TODO set the device keys etc
-  //
-  // sendQuery("AT+VER?");
-  // sendQuery("AT+DEVEUI?");
-  // sendQuery("AT+APPEUI?");
-  //
-  // sendCommand(String("AT+APPKEY=") + WBEEST_APP_KEY); // set appkey
-  // sendQuery("AT+APPKEY?");
-  //
-  //
-  //
-  // sendCommand("AT+MODE=1");
-  // sendCommand("AT+RTYNUM=8");
-  // sendCommand("AT+DELAY=5000,6000,5000,6000");
-  // sendCommand("AT+DUTYCYCLE=0");
-  //
-  //
-  // sendQuery("AT+RTYNUM?");
-  // sendQuery("AT+DELAY?");
-  //
+
+  char key_message[128];  // Make sure this buffer is large enough to hold the concatenated message
+  sprintf(key_message, "AT+KEY=APPKEY,%s", WBEEST_APP_KEY);
+  sendCommand(key_message);  // Send the concatenated message
+   
+  sleep_ms(500);
   join();
+  sendCommand("AT+MSG=\"Hello Griffin\"");
 
   sleep();
   return true;
@@ -176,6 +171,14 @@ void Lora::_intToBytes(uint8_t *buf, int32_t i, uint8_t byteSize) {
     buf[x] = (uint8_t)(i >> (x * 8));
   }
 }
+void Lora::_bufferToHex(const uint8_t* buffer, int len, char* hexstr) {
+    for (int i = 0; i < len; ++i) {
+        sprintf(&hexstr[i*2], "%02X", buffer[i]);
+    }
+    hexstr[len*2] = '\0';
+}
+
+
 bool Lora::update() {
 
   // attempts to send a message and returns false if the lora comms
@@ -290,10 +293,6 @@ bool Lora::join() {
   bool joined = false;
 
   DEBUG_PRINT(("attempting to join.."));
-  // join failed msg
-  char join_failed_msg[] = "+JOIN: Join failed";
-  char join_succeeded_msg[] = "+JOIN: NetID";
-  char join_attempt_complete_msg[] = "+JOIN: Done";
 
   uint64_t timeout_us = 100000000; // Overall timeout: 100 seconds
   char responseBuffer[256] = {0};
@@ -321,6 +320,9 @@ bool Lora::join() {
           joined = false;
         } else if (strstr(responseBuffer, join_succeeded_msg) != NULL) {
           DEBUG_PRINT(("Join succeeded"));
+          joined = true;
+        } else if (strstr(responseBuffer, already_joined_msg) != NULL) {
+          DEBUG_PRINT(("Already joined"));
           joined = true;
         } else if (strstr(responseBuffer, join_attempt_complete_msg) != NULL) {
           DEBUG_PRINT(("Join attempt complete"));
@@ -386,79 +388,81 @@ bool Lora::sendPayload(uint8_t *message, int len) {
 
   watchdog_update();
   DEBUG_PRINT(("sending message"));
-  //
-  // Serial.println(message.getLength());
+
   bool message_sent = false;
+  uint64_t timeout_us = 100000000; // Overall timeout: 100 seconds
 
   // location messages are length 12 and go to port 3
   // activity messages are length 49 and go to port 5
-  combined_reading current_reading =
-      storage->get_current_reading(); // TODO remove and replace with lora send
-                                      // logic
   if (len == 12) {
 
-    DEBUG_PRINT(("sending location message: time %lu, lat %f, lon %f",
-                 current_reading.location.start_time,
-                 current_reading.location.lat, current_reading.location.lon));
-    //   SerialLoRa.print("AT+PCTX 3,");
+    DEBUG_PRINT(("sending location message"));
+    sendCommand("AT+PORT=3");
   } else {
-    DEBUG_PRINT(("sending activity message: time %lu, activity %d",
-                 current_reading.activity.start_time,
-                 current_reading.activity.activities[0]));
-    //   SerialLoRa.print("AT+PCTX 5,");
+    DEBUG_PRINT(("sending activity message"));
+    sendCommand("AT+PORT=5");
   }
-  // SerialLoRa.print(message.getLength());
-  // SerialLoRa.print("\r");
-  // SerialLoRa.write(message.getBytes(),message.getLength());
-  //
-  // int modem_status = 0;
-  //
-  // String answer;
-  // while (true)
-  // {
-  //
-  //   answer = SerialLoRa.readStringUntil('\r\n');
-  //   if (answer.startsWith("+OK")){
-  //     modem_status=MODEM_OK;
-  //     break;
-  //   }
-  //   if (answer.startsWith("+ERR")){
-  //     modem_status = answer.substring(answer.indexOf("=")+1).toInt();
-  //     break;
-  //   }
-  // }
-  //
-  // if (modem_status==MODEM_OK)
-  // {
-  //   long lora_start_time = millis();
-  //   long lora_timeout = 60*1000*2;  // break after 2 minutes
-  //   String modem_ans;
-  //   while (true)
-  //   {
-  //
-  //     modem_ans = SerialLoRa.readStringUntil('\r\n');
-  //     if (modem_ans.startsWith("+NOACK")){
-  //         Serial.println("no ack recv");
-  //         message_sent = false;
-  //
-  //         break;
-  //     }
-  //     if (modem_ans.startsWith("+ACK")){
-  //         Serial.println("ack recv");
-  //         message_sent = true;
-  //         break;
-  //     }
-  //     if (millis() - lora_start_time > lora_timeout){
-  //       break;
-  //     }
-  //   }
-  // }
-  //
-  //
-  // if (modem_status==ERR_NOT_JOINED) // not joined
-  //   join_success = false;
 
-  message_sent = true;
+  // build the message - first create the hex string
+  char hexstr[max_string_length];
+  _bufferToHex(message, len, hexstr);
+
+
+  // next create the AT command
+  char at_msg[max_string_length + 32];
+  snprintf(at_msg, sizeof(at_msg), "AT+CMSGHEX=\"%s\"\r\n", hexstr);
+
+  // prepare the response buffer
+  char responseBuffer[256] = {0};
+  uint8_t bufferPos = 0;
+
+  watchdog_update();
+
+  // send the message
+  uart_puts(UART_ID, at_msg);
+
+  uint64_t start_time = time_us_64(); // Record the starting time
+
+  watchdog_update();
+  
+
+  while (time_us_64() - start_time < timeout_us) {
+
+    while (uart_is_readable(UART_ID)) {
+      uint8_t ch = uart_getc(UART_ID);
+      if (ch == '\r') {
+        continue;
+      }
+      if (ch == '\n') {
+        // message is finished so print and clear the buffer
+        DEBUG_PRINT(("LoRa Response: %s", responseBuffer));
+        if (strstr(responseBuffer, not_joined_msg) != NULL) {
+          DEBUG_PRINT(("Not joined"));
+          join_success = false;
+        } else if (strstr(responseBuffer, send_msg_ack) != NULL) {
+          DEBUG_PRINT(("Send succeeded"));
+          message_sent = true;
+        } else if (strstr(responseBuffer, send_msg_complete) != NULL) {
+          DEBUG_PRINT(("Send attempt complete"));
+          return message_sent;
+        }
+
+        responseBuffer[0] = '\0'; // Clear the buffer
+        bufferPos = 0;            // Reset the buffer position
+      }
+
+      // Store in buffer (prevent overflow)
+      if (bufferPos < sizeof(responseBuffer) - 1) {
+        responseBuffer[bufferPos++] = ch;
+        responseBuffer[bufferPos] = '\0';
+      }
+    }
+
+    // Small delay to prevent CPU hogging
+    sleep_us(10);
+    watchdog_update();
+  }
+
   return message_sent;
 }
 
