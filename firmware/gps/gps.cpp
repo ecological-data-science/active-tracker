@@ -7,7 +7,16 @@ bool GPS::begin(i2c_inst_t *i2c) {
   bool assumeSuccess = false;
 
   rtc_init();
-
+  datetime_t t = {
+        .year  = 2025,
+        .month = 5,
+        .day   = 23,
+        .dotw  = 5, 
+        .hour  = 12,
+        .min   = 00,
+        .sec   = 00
+    };
+  rtc_set_datetime(&t);
 
   gpio_init(WAKEUP_PIN);
   gpio_set_dir(WAKEUP_PIN, GPIO_OUT);
@@ -85,26 +94,62 @@ void GPS::setNightMode() {
     }
 }
 
+// uint32_t GPS::getUnixEpochfromRTC() {
+//     // Get the current time from the RTC
+//     datetime_t dt;
+//     rtc_get_datetime(&dt);
+//
+//     // Convert to tm structure
+//     struct tm timeinfo;
+//     timeinfo.tm_year = dt.year - 1900;  // tm_year is years since 1900
+//     timeinfo.tm_mon = dt.month - 1;     // tm_mon is 0-11
+//     timeinfo.tm_mday = dt.day;
+//     timeinfo.tm_hour = dt.hour;
+//     timeinfo.tm_min = dt.min;
+//     timeinfo.tm_sec = dt.sec;
+//     timeinfo.tm_isdst = -1;             // Let mktime determine DST status
+//
+//     // Convert to Unix epoch time
+//     time_t unix_time = mktime(&timeinfo);
+//     return (uint32_t)unix_time;
+// }
 uint32_t GPS::getUnixEpochfromRTC() {
     // Get the current time from the RTC
     datetime_t dt;
     rtc_get_datetime(&dt);
     
-    // Convert to tm structure
-    struct tm timeinfo;
-    timeinfo.tm_year = dt.year - 1900;  // tm_year is years since 1900
-    timeinfo.tm_mon = dt.month - 1;     // tm_mon is 0-11
-    timeinfo.tm_mday = dt.day;
-    timeinfo.tm_hour = dt.hour;
-    timeinfo.tm_min = dt.min;
-    timeinfo.tm_sec = dt.sec;
-    timeinfo.tm_isdst = -1;             // Let mktime determine DST status
+    // Calculate Unix timestamp directly (UTC)
+    uint32_t unix_time = 0;
     
-    // Convert to Unix epoch time
-    time_t unix_time = mktime(&timeinfo);
-    return (uint32_t)unix_time;
+    // Seconds from 1970 till start of year
+    int year = dt.year;
+    unix_time = (year - 1970) * 365 * 24 * 3600;
+    
+    // Add leap day seconds for previous years
+    for (int y = 1970; y < year; y++) {
+        if ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)) {
+            unix_time += 24 * 3600;
+        }
+    }
+    
+    // Add seconds from months
+    const uint16_t monthDays[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+    unix_time += monthDays[dt.month - 1] * 24 * 3600;
+    
+    // Add leap day if needed for current year
+    if (dt.month > 2 && 
+        ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))) {
+        unix_time += 24 * 3600;
+    }
+    
+    // Add days, hours, minutes, seconds
+    unix_time += (dt.day - 1) * 24 * 3600;
+    unix_time += dt.hour * 3600;
+    unix_time += dt.min * 60;
+    unix_time += dt.sec;
+    
+    return unix_time;
 }
-
 void GPS::setRTCfromUnixEpoch(uint32_t unix_time) {
     // Set the RTC time to the given Unix epoch time
     time_t time = (time_t)unix_time;
