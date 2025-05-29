@@ -3,55 +3,66 @@
 
 Adafruit_INA219 ina219;
 
+// Variables for running average
+unsigned long sampleCount = 0;
 
+// Battery capacity in mAh
+const float batteryCapacity_mAh = 3100.0;
+float avgCurrent_mA = 0.0;
+
+// Timer variables
+unsigned long lastPrintTime = 0;
+const unsigned long printInterval = 20000; // 20 seconds in milliseconds
 void setup(void) 
 {
   Serial.begin(115200);
   while (!Serial) {
-      // will pause Zero, Leonardo, etc until serial console opens
       delay(1);
   }
     
   Serial.println("Hello!");
   
-  // Initialize the INA219.
-  // By default the initialization will use the largest range (32V, 2A).  However
-  // you can call a setCalibration function to change this range (see comments).
   if (! ina219.begin()) {
     Serial.println("Failed to find INA219 chip");
     while (1) { delay(10); }
   }
-  // To use a slightly lower 32V, 1A range (higher precision on amps):
-  //ina219.setCalibration_32V_1A();
-  // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
-  //ina219.setCalibration_16V_400mA();
 
   Serial.println("Measuring voltage and current with INA219 ...");
 }
 
 void loop(void) 
 {
-  float shuntvoltage = 0;
-  float busvoltage = 0;
-  float current_mA = 0;
-  float loadvoltage = 0;
-  float power_mW = 0;
-
-  shuntvoltage = ina219.getShuntVoltage_mV();
-  busvoltage = ina219.getBusVoltage_V();
-  current_mA = ina219.getCurrent_mA();
-  power_mW = ina219.getPower_mW();
-  loadvoltage = busvoltage + (shuntvoltage / 1000);
+  float current_mA = ina219.getCurrent_mA();
   
-  // print the current and the current time in seconds
-  Serial.print("Time: "); Serial.print(millis() / 1000); Serial.print("s    ");
+  avgCurrent_mA = (avgCurrent_mA * sampleCount + current_mA) / (sampleCount + 1);
+  sampleCount++;
+  
 
-  // Serial.print("Bus Voltage:   "); Serial.print(busvoltage); Serial.println(" V");
-  // Serial.print("Shunt Voltage: "); Serial.print(shuntvoltage); Serial.println(" mV");
-  // Serial.print("Load Voltage:  "); Serial.print(loadvoltage); Serial.println(" V");
-  Serial.print("Current: "); Serial.print(current_mA); Serial.println(" mA");
-  // Serial.print("Power:         "); Serial.print(power_mW); Serial.println(" mW");
-  // Serial.println("");
+  
+  // Only print every 20 seconds
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastPrintTime >= printInterval) {
+    float estimatedHours = (avgCurrent_mA > 0) ? (batteryCapacity_mAh / avgCurrent_mA) : 0;
+    unsigned int estHrs = (unsigned int)estimatedHours;
+    unsigned int estMins = (unsigned int)((estimatedHours - estHrs) * 60);
+    float estimatedDays = estimatedHours / 24.0;
 
-  delay(1000);
+    lastPrintTime = currentMillis;
+    // Print output
+    Serial.print("Time: "); Serial.print(millis() / 1000); Serial.print("s    ");
+    Serial.print("Current: "); Serial.print(current_mA); Serial.print(" mA    ");
+    Serial.print("Avg current: "); Serial.print(avgCurrent_mA, 2); Serial.print(" mA    ");
+    Serial.print("Est. Battery Life: "); 
+    if (avgCurrent_mA > 0) {
+      Serial.print(estHrs); Serial.print("h ");
+    Serial.print(estMins); Serial.print("m    ");
+      Serial.print("("); Serial.print(estimatedDays, 2); Serial.println(" days)");
+
+    } 
+    else {
+      Serial.println("N/A");
+    }
+  }
+
+  delay(10);
 }

@@ -1,5 +1,3 @@
-
-
 #include "lora.h"
 
 static const char join_failed_msg[] = "+JOIN: Join failed";
@@ -9,134 +7,6 @@ static const char already_joined_msg[] = "+JOIN: Joined already";
 static const char not_joined_msg[] = "+CMSGHEX: Please join network first";
 static const char send_msg_complete[] = "+CMSGHEX: Done";
 static const char send_msg_ack[] = "+CMSGHEX: ACK Received";
-
-void Lora::sendCommand(const char *msg) {
-  uint64_t timeout_us = 1000000;     // Overall timeout: 1 second
-  uint64_t idle_timeout_us = 100000; // Stop after 100ms of no new data
-  char responseBuffer[256] = {0};
-  uint8_t bufferPos = 0;
-
-  watchdog_update();
-  uart_puts(UART_ID, msg);
-  uart_puts(UART_ID, "\r\n");
-
-  watchdog_update();
-  uint64_t start_time = time_us_64(); // Record the starting time
-  uint64_t last_read_time = start_time;
-
-  while (time_us_64() - start_time < timeout_us) {
-    bool got_data = false;
-
-    while (uart_is_readable(UART_ID)) {
-      uint8_t ch = uart_getc(UART_ID);
-      got_data = true;
-
-      // Store in buffer (prevent overflow)
-      if (bufferPos < sizeof(responseBuffer) - 1) {
-        responseBuffer[bufferPos++] = ch;
-        responseBuffer[bufferPos] = '\0';
-      }
-    }
-
-    if (got_data) {
-      last_read_time = time_us_64();
-    }
-    // If we've received some data (buffer not empty) and had no new data for
-    // idle_timeout_us, we can assume the response is complete
-    else if (bufferPos > 0 &&
-             (time_us_64() - last_read_time > idle_timeout_us)) {
-      break;
-    }
-
-    // Small delay to prevent CPU hogging
-    sleep_us(10);
-  }
-
-  // Print the collected response
-  DEBUG_PRINT(("LoRa Response: %s", responseBuffer));
-  watchdog_update();
-}
-
-void Lora::sendBytes(const uint8_t *msg, int len) {
-  uint64_t timeout_us = 1000000;     // Overall timeout: 1 second
-  uint64_t idle_timeout_us = 100000; // Stop after 100ms of no new data
-  char responseBuffer[256] = {0};
-  uint8_t bufferPos = 0;
-
-  watchdog_update();
-  uart_write_blocking(UART_ID, msg, len);
-
-  watchdog_update();
-  uint64_t start_time = time_us_64(); // Record the starting time
-  uint64_t last_read_time = start_time;
-
-  while (time_us_64() - start_time < timeout_us) {
-    bool got_data = false;
-
-    while (uart_is_readable(UART_ID)) {
-      uint8_t ch = uart_getc(UART_ID);
-      got_data = true;
-
-      // Store in buffer (prevent overflow)
-      if (bufferPos < sizeof(responseBuffer) - 1) {
-        responseBuffer[bufferPos++] = ch;
-        responseBuffer[bufferPos] = '\0';
-      }
-    }
-
-    if (got_data) {
-      last_read_time = time_us_64();
-    }
-    // If we've received some data (buffer not empty) and had no new data for
-    // idle_timeout_us, we can assume the response is complete
-    else if (bufferPos > 0 &&
-             (time_us_64() - last_read_time > idle_timeout_us)) {
-      break;
-    }
-
-    // Small delay to prevent CPU hogging
-    sleep_us(10);
-  }
-
-  // Print the collected response
-  DEBUG_PRINT(("LoRa Response: %s", responseBuffer));
-  watchdog_update();
-}
-
-void Lora::wakeup() {
-  watchdog_update();
-  gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART); // Switch back to UART
-  gpio_set_dir(UART_TX_PIN, GPIO_OUT);
-  // Re-initialize UART if needed
-  uart_init(UART_ID, BAUD_RATE);
-  watchdog_update();
-  sleep_ms(1000);
-  uint8_t message[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x74, 0x2B, 0x6C, 0x6F,
-                       0x77, 0x70, 0x6F, 0x77, 0x65, 0x72, 0x3D, 0x61, 0x75,
-                       0x74, 0x6F, 0x6F, 0x66, 0x66, 0x0D, 0x0A};
-  sendBytes(message, sizeof(message));
-  // SerialLoRa.println("AT+WAKEUP");
-  // delay(500);
-  // SerialLoRa.flush();
-  // delay(500);
-}
-
-void Lora::sleep() {
-  // SerialLoRa.println("AT+SLEEP");
-  // delay(500);
-  // SerialLoRa.flush();
-  // delay(500);
-  sendCommand("AT+LOWPOWER=AUTOON");
-  // uart_puts(UART_ID, "AT+LOWPOWER=AUTOON\r\n");
-  // while (uart_is_readable(UART_ID)) {
-  //     putchar(uart_getc(UART_ID));
-  // }
-
-  // Set UART_TX to input mode for low power
-  gpio_set_function(UART_TX_PIN,
-                    GPIO_FUNC_SIO); // Switch from UART to SIO (GPIO)
-  gpio_set_dir(UART_TX_PIN, GPIO_IN);
-}
 
 bool Lora::begin(Storage *_storage) {
 
@@ -160,24 +30,10 @@ bool Lora::begin(Storage *_storage) {
    
   sleep_ms(500);
   join();
-  sendCommand("AT+MSG=\"Hello Griffin\"");
 
-  sleep();
+  deactivate();
   return true;
 }
-
-void Lora::_intToBytes(uint8_t *buf, int32_t i, uint8_t byteSize) {
-  for (uint8_t x = 0; x < byteSize; x++) {
-    buf[x] = (uint8_t)(i >> (x * 8));
-  }
-}
-void Lora::_bufferToHex(const uint8_t* buffer, int len, char* hexstr) {
-    for (int i = 0; i < len; ++i) {
-        sprintf(&hexstr[i*2], "%02X", buffer[i]);
-    }
-    hexstr[len*2] = '\0';
-}
-
 
 bool Lora::update() {
 
@@ -288,6 +144,113 @@ bool Lora::update() {
   return true;
 }
 
+void Lora::sendCommand(const char *msg) {
+  uint64_t timeout_us = 1000000;     // Overall timeout: 1 second
+  uint64_t idle_timeout_us = 100000; // Stop after 100ms of no new data
+  char responseBuffer[256] = {0};
+  uint8_t bufferPos = 0;
+
+  watchdog_update();
+  uart_puts(UART_ID, msg);
+  uart_puts(UART_ID, "\r\n");
+
+  watchdog_update();
+  uint64_t start_time = time_us_64(); // Record the starting time
+  uint64_t last_read_time = start_time;
+
+  while (time_us_64() - start_time < timeout_us) {
+    bool got_data = false;
+
+    while (uart_is_readable(UART_ID)) {
+      uint8_t ch = uart_getc(UART_ID);
+      got_data = true;
+
+      // Store in buffer (prevent overflow)
+      if (bufferPos < sizeof(responseBuffer) - 1) {
+        responseBuffer[bufferPos++] = ch;
+        responseBuffer[bufferPos] = '\0';
+      }
+    }
+
+    if (got_data) {
+      last_read_time = time_us_64();
+    }
+    // If we've received some data (buffer not empty) and had no new data for
+    // idle_timeout_us, we can assume the response is complete
+    else if (bufferPos > 0 &&
+             (time_us_64() - last_read_time > idle_timeout_us)) {
+      break;
+    }
+
+    // Small delay to prevent CPU hogging
+    sleep_us(10);
+  }
+
+  // Print the collected response
+  DEBUG_PRINT(("LoRa Response: %s", responseBuffer));
+  watchdog_update();
+}
+
+void Lora::sendBytes(const uint8_t *msg, int len) {
+  uint64_t timeout_us = 1000000;     // Overall timeout: 1 second
+  uint64_t idle_timeout_us = 100000; // Stop after 100ms of no new data
+  char responseBuffer[256] = {0};
+  uint8_t bufferPos = 0;
+
+  watchdog_update();
+  uart_write_blocking(UART_ID, msg, len);
+
+  watchdog_update();
+  uint64_t start_time = time_us_64(); // Record the starting time
+  uint64_t last_read_time = start_time;
+
+  while (time_us_64() - start_time < timeout_us) {
+    bool got_data = false;
+
+    while (uart_is_readable(UART_ID)) {
+      uint8_t ch = uart_getc(UART_ID);
+      got_data = true;
+
+      // Store in buffer (prevent overflow)
+      if (bufferPos < sizeof(responseBuffer) - 1) {
+        responseBuffer[bufferPos++] = ch;
+        responseBuffer[bufferPos] = '\0';
+      }
+    }
+
+    if (got_data) {
+      last_read_time = time_us_64();
+    }
+    // If we've received some data (buffer not empty) and had no new data for
+    // idle_timeout_us, we can assume the response is complete
+    else if (bufferPos > 0 &&
+             (time_us_64() - last_read_time > idle_timeout_us)) {
+      break;
+    }
+
+    // Small delay to prevent CPU hogging
+    sleep_us(10);
+  }
+
+  // Print the collected response
+  DEBUG_PRINT(("LoRa Response: %s", responseBuffer));
+  watchdog_update();
+}
+
+void Lora::wakeup() {
+  watchdog_update();
+  gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART); // Switch back to UART
+  gpio_set_dir(UART_TX_PIN, GPIO_OUT);
+  // Re-initialize UART if needed
+  uart_init(UART_ID, BAUD_RATE);
+  watchdog_update();
+  sleep_ms(1000);
+  uint8_t message[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x74, 0x2B, 0x6C, 0x6F,
+                       0x77, 0x70, 0x6F, 0x77, 0x65, 0x72, 0x3D, 0x61, 0x75,
+                       0x74, 0x6F, 0x6F, 0x66, 0x66, 0x0D, 0x0A};
+  sendBytes(message, sizeof(message));
+}
+
 bool Lora::join() {
 
   bool joined = false;
@@ -345,42 +308,6 @@ bool Lora::join() {
     watchdog_update();
   }
 
-  // Print the collected response
-  // DEBUG_PRINT(("LoRa Response: %s", responseBuffer));
-  // watchdog_update();
-  // int modem_status = sendCommand("AT+JOIN");
-  // if (modem_status==MODEM_OK) // join request sent
-  // {
-  //
-  //   long lora_start_time = millis();
-  //   long lora_timeout = 60*1000*5;  // break after 5 minutes
-  //   String modem_ans;
-  //   while (true)
-  //   {
-  //
-  //     modem_ans = SerialLoRa.readStringUntil('\r\n');
-  //
-  //     if (modem_ans.startsWith("+EVENT=1,0")){
-  //         Serial.println("join failed");
-  //         break;
-  //     }
-  //     if (modem_ans.startsWith("+EVENT=1,1")){
-  //         Serial.println("join succeeded");
-  //         joined = true;
-  //         break;
-  //     }
-  //     if (millis() - lora_start_time > lora_timeout){
-  //       break;
-  //     }
-  //   }
-  // }
-  //
-  // if (modem_status==ERR_ALREADY_JOINED) // already joined
-  //   joined = true;
-  //
-
-  // TODO: implement join code
-  // joined = true;
   return joined;
 }
 
@@ -474,87 +401,27 @@ void Lora::activate(bool _nightmode) {
   nightmode = _nightmode;
   wakeup();
   sendCommand("AT");
-  //   if (lora_active==true)
-  //     return;
-  //   SerialLoRa.begin(19200);
-  //   long lora_start_time = millis();
-  //   long lora_timeout = 10000;
-  //   while(!SerialLoRa){
-  //     if (millis() - lora_start_time > lora_timeout)
-  //       return;
-  //   }
-  //
-  //   digitalWrite(LORA_IRQ_DUMB, LOW);
-  //   lora_active=true;
-  //   delay(500);
-  //   return;
 }
-//
-void Lora::deactivate() {
-  sleep();
-  //
-  //   if (lora_active==false)
-  //     return;
-  //
-  //   digitalWrite(LORA_IRQ_DUMB, HIGH);
-  //
-  //   delay(500);
-  //   sendCommand("AT$DETACH"); // request UART to disconnect
-  //
-  //   lora_active=false;
-  //   delay(500);
-  //
-  //   return;
-}
-//
-// void Lora::sendQuery(const char* atstring) {
-//   //
-//   //   Serial.print("Sending query: ");
-//   //   Serial.println(atstring);
-//   //
-//   //   SerialLoRa.println(atstring);
-//   //   String answer;
-//   //   while (true)
-//   //   {
-//   //
-//   //     answer = SerialLoRa.readStringUntil('\r\n');
-//   //     if (answer.startsWith("+OK")){
-//   //       break;
-//   //     }
-//   //     if (answer.startsWith("+ERR")){
-//   //       break;
-//   //     }
-//   //   }
-//   //   Serial.print("Response: ");
-//   //   Serial.println(answer);
-//   //   delay(500);
-// }
 
-// int Lora::sendCommand(const char* atstring) {
-//   int modem_status = 0;
-//
-//   // Serial.print("Sending command: ");
-//   // Serial.println(atstring);
-//   //
-//   // SerialLoRa.println(atstring);
-//   //
-//   // String answer;
-//   // while (true)
-//   // {
-//   //
-//   //   answer = SerialLoRa.readStringUntil('\r\n');
-//   //   if (answer.startsWith("+OK")){
-//   //     modem_status=MODEM_OK;
-//   //     break;
-//   //   }
-//   //   if (answer.startsWith("+ERR")){
-//   //     // get the error code
-//   //     modem_status = answer.substring(answer.indexOf("=")+1).toInt();
-//   //     break;
-//   //   }
-//   // }
-//   // Serial.print("Response: ");
-//   // Serial.println(answer);
-//   // delay(500);
-//   return modem_status;
-// }
+void Lora::deactivate() {
+  sendCommand("AT+LOWPOWER=AUTOON");
+
+  // Set UART_TX to input mode for low power
+  gpio_set_function(UART_TX_PIN,
+                    GPIO_FUNC_SIO); // Switch from UART to SIO (GPIO)
+  gpio_set_dir(UART_TX_PIN, GPIO_IN);
+}
+
+void Lora::_intToBytes(uint8_t *buf, int32_t i, uint8_t byteSize) {
+  for (uint8_t x = 0; x < byteSize; x++) {
+    buf[x] = (uint8_t)(i >> (x * 8));
+  }
+}
+
+void Lora::_bufferToHex(const uint8_t* buffer, int len, char* hexstr) {
+    for (int i = 0; i < len; ++i) {
+        sprintf(&hexstr[i*2], "%02X", buffer[i]);
+    }
+    hexstr[len*2] = '\0';
+}
+

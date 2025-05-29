@@ -14,17 +14,12 @@ public:
   bool begin(Storage *storage);
   bool update();
   void wakeup();
-  void sleep();
-
   bool join();
-  // bool start(location_reading message);
-
   bool session_success = false;
   void activate(bool _nightmode);
   void deactivate();
 
 private:
-  void sendQuery(const char *atstring);
   void sendCommand(const char *atstring);
   void sendBytes(const uint8_t *msg, int len);
   bool sendPayload(uint8_t *message, int len);
