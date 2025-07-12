@@ -47,8 +47,11 @@ bool Lora::update() {
 
   if (!join_success) {
     join_success = join();
-    if (!join_success)
+    if (!join_success){
+      storage->archive_latest_message();
+      deactivate();
       return false;
+    }
   }
 
   combined_reading current_reading = storage->get_current_reading();
