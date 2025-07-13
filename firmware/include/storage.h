@@ -24,10 +24,10 @@ public:
 private:
   const char *sendCounter = "send_counter.bin";
   const char *dataFile = "telemetry.bin";
-  uint8_t message_buffer[SIZE_OF_RECORD];
+  uint8_t message_buffer[sizeof(combined_reading)];
   combined_reading current_reading;
 
-  int record_size = SIZE_OF_RECORD;
+  int record_size = sizeof(combined_reading);
 
   uint32_t last_record_sent = 0; 
 
