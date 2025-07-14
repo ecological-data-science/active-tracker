@@ -96,7 +96,7 @@ void loop() {
   if ((!GPS_ACTIVE) && (!IMU_ACTIVE) && (!LORA_ACTIVE)) {
     // if nothing active then we are at the top of the hour so wake up the gps and imu
     gps.activate();
-    classifier.activate(gps.getUnixEpochfromRTC());
+    classifier.activate();
 
     GPS_ACTIVE = true;
     IMU_ACTIVE = true;
@@ -114,7 +114,7 @@ void loop() {
   watchdog_update();
   if ((!IMU_ACTIVE) && (!LORA_ACTIVE)) {
     DEBUG_PRINT(("IMU inactive, sending data"));
-    storage.set_latest_message(gps.get_location(), classifier.get_activity());
+    storage.set_latest_message(gps.get_location(), classifier.get_activity(gps.getUnixEpochfromRTC()));
     lora.activate(gps.getNightMode());
     LORA_ACTIVE = true;
   }
@@ -148,10 +148,14 @@ void sleep_until_next_hour_boundary(absolute_time_t start_time) {
   uint64_t sleep_duration_ms = one_hour_ms - time_into_current_hour_ms;
   DEBUG_PRINT(("Sleeping for %llu ms", sleep_duration_ms));
 
+  uint32_t unixtime = gps.getUnixEpochfromRTC();
   set_sys_clock_khz(125000, true);
   // If elapsed_ms is exactly a multiple of one_hour_ms, time_into_current_hour_ms is 0. sleep_duration_ms becomes one_hour_ms,
   // which correctly means sleeping for the next full hour.
   enter_low_power_mode_ms(sleep_duration_ms);
+  unixtime = unixtime + (sleep_duration_ms / 1000);
+  gps.setRTCfromUnixEpoch(unixtime);
+
   set_sys_clock_48mhz();
 }
 

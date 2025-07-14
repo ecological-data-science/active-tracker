@@ -94,25 +94,6 @@ void GPS::setNightMode() {
     }
 }
 
-// uint32_t GPS::getUnixEpochfromRTC() {
-//     // Get the current time from the RTC
-//     datetime_t dt;
-//     rtc_get_datetime(&dt);
-//
-//     // Convert to tm structure
-//     struct tm timeinfo;
-//     timeinfo.tm_year = dt.year - 1900;  // tm_year is years since 1900
-//     timeinfo.tm_mon = dt.month - 1;     // tm_mon is 0-11
-//     timeinfo.tm_mday = dt.day;
-//     timeinfo.tm_hour = dt.hour;
-//     timeinfo.tm_min = dt.min;
-//     timeinfo.tm_sec = dt.sec;
-//     timeinfo.tm_isdst = -1;             // Let mktime determine DST status
-//
-//     // Convert to Unix epoch time
-//     time_t unix_time = mktime(&timeinfo);
-//     return (uint32_t)unix_time;
-// }
 uint32_t GPS::getUnixEpochfromRTC() {
     // Get the current time from the RTC
     datetime_t dt;

@@ -124,14 +124,14 @@ void Classifier::update_imu(float *pdata) {
   pdata[4] = roll - angle_bias[1];
 }
 
-activity_reading Classifier::get_activity() {
+activity_reading Classifier::get_activity(long unixtime) {
+  latest_activity.start_time = unixtime;
   return latest_activity;
 }
 
-void Classifier::activate(long unixtime){
+void Classifier::activate(){
 
   wakeFromSleep();
-  latest_activity.start_time = unixtime;
 
   memset(latest_activity.activities,0,sizeof(latest_activity.activities));
   // TODO - reset the IMU and reinitialize??

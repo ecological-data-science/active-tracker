@@ -27,9 +27,9 @@ public:
 
   bool begin(i2c_inst_t *i2c);
   bool update();
-  void activate(long int unixtime);
+  void activate();
   void deactivate();
-  activity_reading get_activity();
+  activity_reading get_activity(long int unixtime);
 
 private:
   sensors_event_t accel;
