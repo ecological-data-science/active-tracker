@@ -27,7 +27,13 @@ private:
   uint8_t message_buffer[sizeof(combined_reading)];
   combined_reading current_reading;
 
-  int record_size = sizeof(combined_reading);
+  static const int record_size = 
+    sizeof(long) +                                  // location.start_time
+    sizeof(float) +                                 // location.lat
+    sizeof(float) +                                 // location.lon
+    sizeof(long) +                                  // activity.start_time
+    (NUM_CLASSIFICATIONS * sizeof(uint8_t)) +       // activity.activities array
+    sizeof(bool);                                   // partially_sent flag
 
   uint32_t last_record_sent = 0; 
 

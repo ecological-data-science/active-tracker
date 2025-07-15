@@ -86,10 +86,33 @@ void Storage::archive_latest_message() {
     return;
   }
 
-  memcpy(message_buffer, &current_reading, sizeof(current_reading));
-  lfs_file_write(&lfs, &file, message_buffer, record_size);
-  lfs_file_close(&lfs, &file);
-  new_message = false;
+    // Explicitly serialize each field to avoid padding issues
+    uint8_t* ptr = message_buffer;
+    
+    // Location data
+    memcpy(ptr, &current_reading.location.start_time, sizeof(long));
+    ptr += sizeof(long);
+    memcpy(ptr, &current_reading.location.lat, sizeof(float));
+    ptr += sizeof(float);
+    memcpy(ptr, &current_reading.location.lon, sizeof(float));
+    ptr += sizeof(float);
+    
+    // Activity data
+    memcpy(ptr, &current_reading.activity.start_time, sizeof(long));
+    ptr += sizeof(long);
+    memcpy(ptr, &current_reading.activity.activities, NUM_CLASSIFICATIONS * sizeof(uint8_t));
+    ptr += NUM_CLASSIFICATIONS * sizeof(uint8_t);
+    
+    // Partially sent flag
+    memcpy(ptr, &current_reading.partially_sent, sizeof(bool));
+    
+    lfs_file_write(&lfs, &file, message_buffer, record_size);
+    lfs_file_close(&lfs, &file);
+    new_message = false;
+  // memcpy(message_buffer, &current_reading, sizeof(current_reading));
+  // lfs_file_write(&lfs, &file, message_buffer, record_size);
+  // lfs_file_close(&lfs, &file);
+  // new_message = false;
 }
 
 combined_reading Storage::get_current_reading() {
@@ -117,11 +140,37 @@ bool Storage::anything_to_send(bool nightmode) {
   int total_records = file_size / record_size;
 
   if (total_records > last_record_sent) {
-    lfs_file_seek(&lfs, &file, last_record_sent * record_size, LFS_SEEK_SET);
-    lfs_file_read(&lfs, &file, message_buffer, record_size);
-    lfs_file_close(&lfs, &file);
-    memcpy(&current_reading, message_buffer, sizeof(current_reading));
-    return true;
+      lfs_file_seek(&lfs, &file, last_record_sent * record_size, LFS_SEEK_SET);
+      lfs_file_read(&lfs, &file, message_buffer, record_size);
+      lfs_file_close(&lfs, &file);
+      
+      // Explicitly deserialize each field
+      uint8_t* ptr = message_buffer;
+      
+      // Location data
+      memcpy(&current_reading.location.start_time, ptr, sizeof(long));
+      ptr += sizeof(long);
+      memcpy(&current_reading.location.lat, ptr, sizeof(float));
+      ptr += sizeof(float);
+      memcpy(&current_reading.location.lon, ptr, sizeof(float));
+      ptr += sizeof(float);
+      
+      // Activity data
+      memcpy(&current_reading.activity.start_time, ptr, sizeof(long));
+      ptr += sizeof(long);
+      memcpy(&current_reading.activity.activities, ptr, NUM_CLASSIFICATIONS * sizeof(uint8_t));
+      ptr += NUM_CLASSIFICATIONS * sizeof(uint8_t);
+      
+      // Partially sent flag
+      memcpy(&current_reading.partially_sent, ptr, sizeof(bool));
+      
+      return true;
+
+    // lfs_file_seek(&lfs, &file, last_record_sent * record_size, LFS_SEEK_SET);
+    // lfs_file_read(&lfs, &file, message_buffer, record_size);
+    // lfs_file_close(&lfs, &file);
+    // memcpy(&current_reading, message_buffer, sizeof(current_reading));
+    // return true;
   }
 
   lfs_file_close(&lfs, &file);
@@ -129,32 +178,48 @@ bool Storage::anything_to_send(bool nightmode) {
 }
 
 void Storage::location_send_successful() {
-
   current_reading.partially_sent = true;
 
   if (new_message) {
-    return;
+      return;
   }
   
   if (lfs_file_open(&lfs, &file, dataFile, LFS_O_WRONLY) != LFS_ERR_OK) {
-        DEBUG_PRINT(("Failed to open data file for updating record %lu", last_record_sent));
-    return;
+      DEBUG_PRINT(("Failed to open data file for updating record %lu", last_record_sent));
+      return;
   }
 
   // Seek to the position of the current archived record
   lfs_soff_t seek_pos = (lfs_soff_t)last_record_sent * record_size;
   if (lfs_file_seek(&lfs, &file, seek_pos, LFS_SEEK_SET) < 0) {
-        DEBUG_PRINT(("Failed to seek to record %lu for update", last_record_sent));
-    lfs_file_close(&lfs, &file);
-    return;
+      DEBUG_PRINT(("Failed to seek to record %lu for update", last_record_sent));
+      lfs_file_close(&lfs, &file);
+      return;
   }
 
-  // Copy the updated current_reading back to the buffer
-  memcpy(message_buffer, &current_reading, sizeof(current_reading));
+  // Explicitly serialize each field to avoid padding issues
+  uint8_t* ptr = message_buffer;
+  
+  // Location data
+  memcpy(ptr, &current_reading.location.start_time, sizeof(long));
+  ptr += sizeof(long);
+  memcpy(ptr, &current_reading.location.lat, sizeof(float));
+  ptr += sizeof(float);
+  memcpy(ptr, &current_reading.location.lon, sizeof(float));
+  ptr += sizeof(float);
+  
+  // Activity data
+  memcpy(ptr, &current_reading.activity.start_time, sizeof(long));
+  ptr += sizeof(long);
+  memcpy(ptr, &current_reading.activity.activities, NUM_CLASSIFICATIONS * sizeof(uint8_t));
+  ptr += NUM_CLASSIFICATIONS * sizeof(uint8_t);
+  
+  // Partially sent flag - now set to true
+  memcpy(ptr, &current_reading.partially_sent, sizeof(bool));
 
   // Write the buffer back to the file at the correct position
   if (lfs_file_write(&lfs, &file, message_buffer, record_size) != record_size) {
-        DEBUG_PRINT(("Failed to write updated record %lu to archive", last_record_sent));
+      DEBUG_PRINT(("Failed to write updated record %lu to archive", last_record_sent));
   }
 
   lfs_file_close(&lfs, &file);
