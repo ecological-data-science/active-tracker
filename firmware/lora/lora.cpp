@@ -29,7 +29,7 @@ bool Lora::begin(Storage *_storage) {
   sendCommand(key_message);  // Send the concatenated message
    
   sleep_ms(500);
-  join();
+  join_success = join();
 
   deactivate();
   return true;
