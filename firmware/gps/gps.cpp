@@ -33,19 +33,14 @@ bool GPS::begin(i2c_inst_t *i2c) {
 
 bool GPS::update() {
 
-  bool fixValid = false;
+  bool fixValid = false; // fully resolved GPS fix - has to have pdop < 5, time fully resolved, and time valid
+  bool fixOk = false; // GNSS fix ok - use if not fully resolved after gps_run_time
+
   if (absolute_time_diff_us(gps_last_check_time, get_absolute_time()) >= gps_check_interval_ms * 1000) {
     gps_last_check_time = get_absolute_time();
     if (getPVT() == true) {
-      bool fixOk = getGnssFixOk();
+      fixOk = getGnssFixOk();
       uint8_t pdop = getPDOP();
-
-      // #ifdef DEBUG
-      // DEBUG_PRINT(("GPS: %d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
-      // DEBUG_PRINT(("Lat: %f Lon: %f ", getLatitude() / 1e7, getLongitude() / 1e7));
-      // DEBUG_PRINT(("Fix: %d ", fixOk));
-      // DEBUG_PRINT(("PDOP: %d ", pdop));
-      // #endif
 
       if (getTimeFullyResolved() && getTimeValid() && fixOk && (pdop < 5)) {
           fixValid = true;
@@ -68,10 +63,22 @@ bool GPS::update() {
   }
 
   if (absolute_time_diff_us(gps_start_time, get_absolute_time()) >= gps_run_time * 1000) {
-    latest_location.start_time = getUnixEpochfromRTC();
-    latest_location.lat = 0.0f;
-    latest_location.lon = 0.0f;
-    DEBUG_PRINT(("No GPS fix, using RTC unix epoch time: %u", latest_location.start_time));
+
+    if (getTimeFullyResolved() && getTimeValid()) {
+      latest_location.start_time = getUnixEpoch();
+      setRTCfromUnixEpoch(latest_location.start_time);
+    } else {
+      latest_location.start_time = getUnixEpochfromRTC();
+      DEBUG_PRINT(("No fully resolved GPS fix, using RTC unix epoch time: %u", latest_location.start_time));
+    }
+
+    if (fixOk) {
+      latest_location.lat = getLatitude() / 1e7;
+      latest_location.lon = getLongitude() / 1e7;
+    } else {
+      latest_location.lat = 0.0f;
+      latest_location.lon = 0.0f;
+    }
 
     setNightMode();
     deactivate();
