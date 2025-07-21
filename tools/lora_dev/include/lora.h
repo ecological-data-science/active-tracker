@@ -10,8 +10,10 @@
 class Lora {
 public:
   bool begin();
+  void wakeup();
+
 
 private:
   void sendCommand(const char *atstring);
-
+  void sendBytes(const uint8_t *msg, int len);
 };
