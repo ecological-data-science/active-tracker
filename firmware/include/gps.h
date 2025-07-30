@@ -14,6 +14,8 @@
 #define UTC_DAY_START 3
 #define UTC_DAY_END 16
 
+// GPS pdop threshold - library returns a value in 0.01 units, so 500 means 5.00
+#define MIN_PDOP_THRESHOLD 500
 
 class GPS : public gps_pico
 {

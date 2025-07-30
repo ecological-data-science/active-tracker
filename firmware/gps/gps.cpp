@@ -42,47 +42,50 @@ bool GPS::update() {
       fixOk = getGnssFixOk();
       uint8_t pdop = getPDOP();
 
-      if (getTimeFullyResolved() && getTimeValid() && fixOk && (pdop < 5)) {
+      DEBUG_PRINT(("%d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
+      DEBUG_PRINT(("Lat: %f Lon: %f", latest_location.lat, latest_location.lon));
+      DEBUG_PRINT(("PDOP: %d, Fix OK: %d", pdop, fixOk));
+      if (getTimeFullyResolved() && getTimeValid() && fixOk && (pdop < MIN_PDOP_THRESHOLD)) {
           fixValid = true;
       }
          
     }
-  }
 
-  if (fixValid) {
-    latest_location.start_time = getUnixEpoch();
-    setRTCfromUnixEpoch(latest_location.start_time);
-    latest_location.lat = getLatitude() / 1e7;
-    latest_location.lon = getLongitude() / 1e7;
-
-    DEBUG_PRINT(("%d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
-    DEBUG_PRINT(("Lat: %f Lon: %f", latest_location.lat, latest_location.lon));
-    setNightMode();
-    deactivate();
-    return false;
-  }
-
-  if (absolute_time_diff_us(gps_start_time, get_absolute_time()) >= gps_run_time * 1000) {
-
-    if (getTimeFullyResolved() && getTimeValid()) {
+    if (fixValid) {
       latest_location.start_time = getUnixEpoch();
       setRTCfromUnixEpoch(latest_location.start_time);
-    } else {
-      latest_location.start_time = getUnixEpochfromRTC();
-      DEBUG_PRINT(("No fully resolved GPS fix, using RTC unix epoch time: %u", latest_location.start_time));
-    }
-
-    if (fixOk) {
       latest_location.lat = getLatitude() / 1e7;
       latest_location.lon = getLongitude() / 1e7;
-    } else {
-      latest_location.lat = 0.0f;
-      latest_location.lon = 0.0f;
+
+      DEBUG_PRINT(("%d-%d-%d %d:%d:%d ", getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond()));
+      DEBUG_PRINT(("Lat: %f Lon: %f", latest_location.lat, latest_location.lon));
+      setNightMode();
+      deactivate();
+      return false;
     }
 
-    setNightMode();
-    deactivate();
-    return false;
+    if (absolute_time_diff_us(gps_start_time, get_absolute_time()) >= gps_run_time * 1000) {
+
+      if (getTimeFullyResolved() && getTimeValid()) {
+        latest_location.start_time = getUnixEpoch();
+        setRTCfromUnixEpoch(latest_location.start_time);
+      } else {
+        latest_location.start_time = getUnixEpochfromRTC();
+        DEBUG_PRINT(("No fully resolved GPS fix, using RTC unix epoch time: %u", latest_location.start_time));
+      }
+
+      if (fixOk) {
+        latest_location.lat = getLatitude() / 1e7;
+        latest_location.lon = getLongitude() / 1e7;
+      } else {
+        latest_location.lat = 0.0f;
+        latest_location.lon = 0.0f;
+      }
+
+      setNightMode();
+      deactivate();
+      return false;
+    }
   }
   return true;
 }
