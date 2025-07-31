@@ -23,6 +23,7 @@ private:
   void sendCommand(const char *atstring);
   void sendBytes(const uint8_t *msg, int len);
   bool sendPayload(uint8_t *message, int len);
+  bool checkSavedJoinStatus();
   void _intToBytes(uint8_t *buf, int32_t i, uint8_t byteSize);
   void _bufferToHex(const uint8_t *buffer, int len, char *hexstr);
   int attempt_counter;

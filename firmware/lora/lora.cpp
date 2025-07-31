@@ -7,6 +7,10 @@ static const char already_joined_msg[] = "+JOIN: Joined already";
 static const char not_joined_msg[] = "+CMSGHEX: Please join network first";
 static const char send_msg_complete[] = "+CMSGHEX: Done";
 static const char send_msg_ack[] = "+CMSGHEX: ACK Received";
+static const char joined_eeprom[] = "+EEPROM: 00, AA";
+static const char not_joined_eeprom[] = "+EEPROM: 00, 00";
+static const char set_joined_eeprom[] = "AT+EEPROM=00,AA";
+static const char set_not_joined_eeprom[] = "AT+EEPROM=00,00";
 
 bool Lora::begin(Storage *_storage) {
 
@@ -23,13 +27,17 @@ bool Lora::begin(Storage *_storage) {
   sleep_ms(500);
   sendCommand("AT+ID=AppEui");
   sendCommand("AT+MODE=LWOTAA");
+  sendCommand("AT+DELAY=RX1,5000");
+  sendCommand("AT+DELAY=RX2,6000");
 
   char key_message[128];  // Make sure this buffer is large enough to hold the concatenated message
   sprintf(key_message, "AT+KEY=APPKEY,%s", WBEEST_APP_KEY);
   sendCommand(key_message);  // Send the concatenated message
    
   sleep_ms(500);
-  join_success = join();
+  join_success = checkSavedJoinStatus();
+  if (!join_success) 
+    join_success = join();
 
   deactivate();
   return true;
@@ -145,6 +153,58 @@ bool Lora::update() {
   }
 
   return true;
+}
+
+bool Lora::checkSavedJoinStatus() {
+  uint64_t timeout_us = 1000000;     // Overall timeout: 1 second
+  uint64_t idle_timeout_us = 100000; // Stop after 100ms of no new data
+  char responseBuffer[256] = {0};
+  uint8_t bufferPos = 0;
+
+  watchdog_update();
+  uart_puts(UART_ID, "AT+EEPROM=00");
+  uart_puts(UART_ID, "\r\n");
+
+  watchdog_update();
+  uint64_t start_time = time_us_64(); // Record the starting time
+  uint64_t last_read_time = start_time;
+
+  while (time_us_64() - start_time < timeout_us) {
+    bool got_data = false;
+
+    while (uart_is_readable(UART_ID)) {
+      uint8_t ch = uart_getc(UART_ID);
+      got_data = true;
+
+      // Store in buffer (prevent overflow)
+      if (bufferPos < sizeof(responseBuffer) - 1) {
+        responseBuffer[bufferPos++] = ch;
+        responseBuffer[bufferPos] = '\0';
+      }
+    }
+
+    if (got_data) {
+      last_read_time = time_us_64();
+    }
+    // If we've received some data (buffer not empty) and had no new data for
+    // idle_timeout_us, we can assume the response is complete
+    else if (bufferPos > 0 &&
+             (time_us_64() - last_read_time > idle_timeout_us)) {
+      break;
+    }
+
+    // Small delay to prevent CPU hogging
+    sleep_us(10);
+  }
+
+  // Print the collected response
+  DEBUG_PRINT(("LoRa Response: %s", responseBuffer));
+  watchdog_update();
+   if (strstr(responseBuffer, joined_eeprom) != NULL) {
+          DEBUG_PRINT(("Joined according to eeprom  "));
+    return true;
+  }
+  return false;
 }
 
 void Lora::sendCommand(const char *msg) {
@@ -292,6 +352,13 @@ bool Lora::join() {
           joined = true;
         } else if (strstr(responseBuffer, join_attempt_complete_msg) != NULL) {
           DEBUG_PRINT(("Join attempt complete"));
+          if (joined) {
+            // If we successfully joined, save the status to EEPROM
+            sendCommand(set_joined_eeprom);
+          } else {
+            // If we did not join, save the status to EEPROM
+            sendCommand(set_not_joined_eeprom);
+          }
           return joined;
         }
 
@@ -374,6 +441,8 @@ bool Lora::sendPayload(uint8_t *message, int len) {
           message_sent = true;
         } else if (strstr(responseBuffer, send_msg_complete) != NULL) {
           DEBUG_PRINT(("Send attempt complete"));
+          if (!join_success) 
+            sendCommand(set_not_joined_eeprom);
           return message_sent;
         }
 
@@ -393,6 +462,8 @@ bool Lora::sendPayload(uint8_t *message, int len) {
     watchdog_update();
   }
 
+  if (!join_success) 
+      sendCommand(set_not_joined_eeprom);
   return message_sent;
 }
 
