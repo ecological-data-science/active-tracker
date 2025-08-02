@@ -1,7 +1,7 @@
 
 #pragma once
 
-#define DEBUG 0
+#define DEBUG 1
 
 #include "pico/stdlib.h"
 #include <cstdio>

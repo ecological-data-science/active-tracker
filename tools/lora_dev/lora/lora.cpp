@@ -16,6 +16,9 @@ bool Lora::begin() {
   sendCommand("AT+ID=AppEui");
   sleep_ms(500);
   sendCommand("AT+LW=VER");
+  sleep_ms(500);
+  sendCommand("AT+EEPROM=00,00");
+  sleep_ms(500);
 
   return true;
 }
